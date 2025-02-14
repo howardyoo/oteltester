@@ -2,6 +2,7 @@
 node_modules/
 runtime/otelcol-config.yml
 runtime/otelcol-contrib
+runtime/otelcol-contrib.tar.gz
 runtime/README.md
 runtime/refinery
 runtime/refinery-config.yml
