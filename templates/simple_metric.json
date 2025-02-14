@@ -1,0 +1,140 @@
+{
+    "resourceMetrics": [
+      {
+        "resource": {
+          "attributes": [
+            {
+              "key": "service.name",
+              "value": {
+                "stringValue": "test.service"
+              }
+            }
+          ]
+        },
+        "scopeMetrics": [
+          {
+            "scope": {
+              "name": "test.library",
+              "version": "1.0.0",
+              "attributes": [
+                {
+                  "key": "test.scope.attribute",
+                  "value": {
+                    "stringValue": "some scope attribute"
+                  }
+                }
+              ]
+            },
+            "metrics": [
+              {
+                "name": "test.counter",
+                "unit": "1",
+                "description": "I am a Counter",
+                "sum": {
+                  "aggregationTemporality": 1,
+                  "isMonotonic": true,
+                  "dataPoints": [
+                    {
+                      "asDouble": 5,
+                      "startTimeUnixNano": "0",
+                      "timeUnixNano": "0",
+                      "attributes": [
+                        {
+                          "key": "test.counter.attr",
+                          "value": {
+                            "stringValue": "some value"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              {
+                "name": "test.gauge",
+                "unit": "1",
+                "description": "I am a Gauge",
+                "gauge": {
+                  "dataPoints": [
+                    {
+                      "asDouble": 10,
+                      "timeUnixNano": "0",
+                      "attributes": [
+                        {
+                          "key": "test.gauge.attr",
+                          "value": {
+                            "stringValue": "some value"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              {
+                "name": "test.histogram",
+                "unit": "1",
+                "description": "I am a Histogram",
+                "histogram": {
+                  "aggregationTemporality": 1,
+                  "dataPoints": [
+                    {
+                      "startTimeUnixNano": "0",
+                      "timeUnixNano": "0",
+                      "count": 2,
+                      "sum": 2,
+                      "bucketCounts": [1,1],
+                      "explicitBounds": [1],
+                      "min": 0,
+                      "max": 2,
+                      "attributes": [
+                        {
+                          "key": "test.histogram.attr",
+                          "value": {
+                            "stringValue": "some value"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              {
+                "name": "test.exponential.histogram",
+                "unit": "1",
+                "description": "I am an Exponential Histogram",
+                "exponentialHistogram": {
+                  "aggregationTemporality": 1,
+                  "dataPoints": [
+                    {
+                      "startTimeUnixNano": "0",
+                      "timeUnixNano": "0",
+                      "count": 3,
+                      "sum": 10,
+                      "scale": 0,
+                      "zeroCount": 1,
+                      "positive": {
+                        "offset": 1,
+                        "bucketCounts": [0,2]
+                      },
+                      "min": 0,
+                      "max": 5,
+                      "zeroThreshold": 0,
+                      "attributes": [
+                        {
+                          "key": "test.exponential.histogram.attr",
+                          "value": {
+                            "stringValue": "some value"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }

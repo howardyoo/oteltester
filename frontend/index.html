@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- favicon -->
+  <link rel="icon" type="image/png" href="./images/honeycomb-512x512-1.png">
+  <title>OTEL Collector and Refinery Tester</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/codemirror.min.css"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/mode/yaml/yaml.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/mode/javascript/javascript.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="floating-header">
+    <img src="./images/honeycomb-512x512-2.png" alt="honeycomb.io" style="width: 16px; height: 16px; margin-right: 10px"/>
+    <a href="#" onclick="scrollToTop(); return false;">Home</a>
+    <span>|</span><a href="#" onclick="scrollToTemplates(); return false;">Telemetry Templates</a>
+    <span>|</span><a href="#" onclick="scrollToCollector(); return false;">OTEL Collector</a>
+    <span>|</span><a href="#" onclick="scrollToRefinery(); return false;">Refinery</a>
+  </div>
+  <div class="content">
+  
+  <h1>🕸️ OpenTelemetry Collector and Refinery Tester ⚗️</h1>
+  <div id="setup" style="display: flex; gap: 20px;">
+    <!-- section for init and config -->
+     <div id="otelcol_setup" style="flex: 1;">
+      <h2>🛠️ Opentelemetry Collector Installation</h2>
+      <p>Please select the version of the collector you want to install. All the versions are contrib versions.</p>
+      <div class="template-buttons">
+        <select id="otelcol_version" name="otelcol_version">
+          <option value="0.118.0" selected>0.118.0</option>
+          <option value="0.117.0">0.117.0</option>
+          <option value="0.116.0">0.116.0</option>
+          <option value="0.115.0">0.115.0</option>
+          <option value="0.114.0">0.114.0</option>
+          <option value="0.113.0">0.113.0</option>
+          <option value="0.112.0">0.112.0</option>
+          <option value="0.111.0">0.111.0</option>
+          <option value="0.110.0">0.110.0</option>
+          <option value="0.109.0">0.109.0</option>
+        </select>
+        <input type="button" id="otelcol_install" value="Install"/>
+        <span id="otelcol_install_status">🔴 Uninstalled</span>
+        <input type="button" id="otelcol_install_cancel" value="Cancel" style="display: none;"/>
+      </div>
+     </div>
+     <div id="refinery_setup" style="flex: 1;">
+      <h2>🛠️ Refinery Installation</h2>
+      <p>Please select the version of the refinery you want to install</p>
+      <div class="template-buttons">
+        <select id="refinery_version" name="refinery_version">
+          <option value="2.9.2" selected>2.9.2</option>
+          <option value="2.9.1">2.9.1</option>
+          <option value="2.9.0">2.9.0</option>
+          <option value="2.8.4">2.8.4</option>
+          <option value="2.8.3">2.8.3</option>
+          <option value="2.8.2">2.8.2</option>
+          <option value="2.8.1">2.8.1</option>
+          <option value="2.7.1">2.7.1</option>
+          <option value="2.7.0">2.7.0</option>
+          <option value="2.6.1">2.6.1</option>
+        </select>
+        <input type="button" id="refinery_install" value="Install"/>
+        <span id="refinery_install_status">🔴 Uninstalled</span>
+        <input type="button" id="refinery_install_cancel" value="Cancel" style="display: none;"/>
+      </div>
+     </div>
+  </div>
+  <div id="template_top">
+    <hr noshade size="1" color="lightgray" />
+    <!-- main section containing collector and refinery -->
+    <h2>🥣 Telemetry Templates</h2>
+    <div>
+      <div class="template-section">
+      <div>
+        <h3>🐾 Traces</h3>
+        <div class="template-buttons">
+          <input type="button" id="trace_simple" value="Simple Trace"/>
+          <input type="button" id="trace_medium" value="Medium Trace"/>
+          <input type="button" id="trace_large" value="Large Trace"/>
+          <input type="button" id="trace_import" value="Import..."/>
+        </div>
+      </div>
+      <div>
+        <h3>📈 Metrics</h3>
+        <div class="template-buttons">
+          <input type="button" id="metric_simple" value="Simple Metric"/>
+          <input type="button" id="metric_server" value="Server Metric"/>
+          <input type="button" id="metric_k8s" value="k8s Metric"/>
+          <input type="button" id="metric_import" value="Import..."/>
+        </div>
+      </div>
+      <div>
+        <h3>🪵 Logs</h3>
+        <div class="template-buttons">
+          <input type="button" id="log_simple" value="Simple Log"/>
+          <input type="button" id="log_import" value="Import..."/>
+        </div>
+      </div>
+    </div>
+    <div class="template-section-50">
+      <div>
+        <h3>📝 OTEL Input</h3>
+        <textarea id="otel_input" rows="20" cols="80"></textarea>
+        <div class="template-buttons">
+          Target Endpoint
+          <input type="text" id="otelcol_url" name="otel_url" value="http://localhost:4318" />
+          <input type="button" id="otel_send" value="⏵ Send"/>
+          <input type="button" id="otel_target_reset" value="Reset"/>
+        </div>
+      </div>
+      <div>
+        <h3>📒 Resources</h3>
+        <!-- List of useful resources in writing OTEL json -->
+        <ul>
+          <li><a href="https://github.com/open-telemetry/opentelemetry-proto/tree/main/examples" target="_blank" rel="noopener">OTLP JSON request examples</a></li>
+        </ul>
+      </div>
+    </div>
+    <div id="otelcol_top">
+      <hr noshade size="1" color="lightgray" />
+    </div>
+    <p id="otelcol">🚧 Loading...</p>
+    <div id="refinery_top">
+      <hr noshade size="1" color="lightgray" />
+    </div>
+    <p id="refinery">🚧 Loading...</p>
+  </div>
+  <script src="editor.js"></script>
+  <script src="main.js"></script>
+  <script src="runtime.js"></script>
+  <script src="template.js"></script>
+  <script src="otelbin.js"></script>
+  </div>
+</body>
+</html>

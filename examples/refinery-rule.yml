@@ -1,0 +1,14 @@
+RulesVersion: 2
+Samplers:
+    __default__:
+        DeterministicSampler:
+            SampleRate: 1
+        RulesBasedSampler:
+            Rules:
+              - Name: Keep 500 status codes
+                SampleRate: 1
+                Conditions:
+                  - Field: http.status_code
+                    Operator: '>='
+                    Value: 500
+                    Datatype: int

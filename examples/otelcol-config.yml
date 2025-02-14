@@ -1,0 +1,53 @@
+# Learn more about the OpenTelemetry Collector via
+# https://opentelemetry.io/docs/collector/
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch:
+  resource/test:
+    attributes:
+      - key: test.res.attribute
+        action: insert
+        value: "newly added resource attribute"
+  transform/test:
+    trace_statements:
+      - context: span  # span level transformation
+        statements:
+          - set(attributes["added"], "this value was added by the transformation")
+
+exporters:
+  otlphttp/out:
+    endpoint: http://localhost:3000
+    compression: none
+    encoding: json
+
+  debug:
+    verbosity: detailed
+
+extensions:
+  health_check:
+  pprof:
+  zpages:
+
+service:
+  extensions: [health_check, pprof, zpages]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [resource/test]
+      exporters: [debug, otlphttp/out]
+    metrics:
+      receivers: [otlp]
+      processors: []
+      exporters: [debug, otlphttp/out]
+    logs:
+      receivers: [otlp]
+      processors: []
+      exporters: [debug, otlphttp/out]

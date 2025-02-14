@@ -1,0 +1,19 @@
+General:
+  ConfigurationVersion: 2
+Network:
+  ListenAddr: "0.0.0.0:8080"
+  PeerListenAddr: "0.0.0.0:8081"
+  HoneycombAPI: "http://localhost:3000"
+  # HoneycombAPI: "https://api.honeycomb.io"
+Debugging:
+  DebugServiceAddr: "localhost:6060"
+  AdditionalErrorFields:
+    - trace.span_id
+  DryRun: true
+Logger:
+  Type: stdout
+  Level: info
+StdoutLogger:
+  Structured: true
+  SamplerEnabled: false
+  SamplerThroughput: 10

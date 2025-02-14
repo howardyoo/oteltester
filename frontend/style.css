@@ -1,0 +1,162 @@
+/* Fixed floading header */
+.floating-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background-color: #25303e;
+  color: white;
+  padding: 15px 20px;
+  display: flex;
+  justify-content: left;
+  align-items: left;
+  z-index: 1000;
+}
+
+.floating-header a {
+  color: white;
+  text-decoration: none;
+  font-weight: bolder;
+}
+
+.floating-header a:visited {
+  text-decoration: none;
+}
+
+.floating-header a:hover {
+  text-decoration: underline;
+}
+
+.floating-header span {
+  color: #d0d0d0;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+/* Main content */
+.content {
+  margin-top: 40px; /* Adjust to avoid content being hidden behind the fixed header */
+  padding: 20px;
+}
+
+textarea {
+  overflow-y: scroll;
+}
+
+div.status {
+  padding: 5px;
+  font-weight: bolder;
+}
+.down-arrow {
+  height: 25px;
+  margin-bottom: 15px;
+}
+
+#otelcol_send_status {
+  font-size: 12px;
+  margin-left: 10px;
+  color: gray;
+}
+
+body {
+    font-family: Roboto, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f0f0f0;
+    color: #51368d;
+    scroll-behavior: smooth;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    color: #25303e;
+    margin-top: 10px;
+    margin-bottom: 10px;
+  }
+  
+  #message {
+    font-size: 18px;
+    color: #007BFF;
+  }
+  
+  input {
+    font-family: Roboto, sans-serif;
+    border-radius: 7px;
+    border: 1px solid #1890ff;
+    color: #1890ff;
+    background-color: #ffffff;
+    padding-left: 15px;
+    padding-right: 15px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    font-size: 14px;
+  }
+
+  /* buttons layout */
+  .template-buttons {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin: 0;
+    padding: 5px;
+  }
+
+  /* add hovering effect on buttons */
+  .template-buttons > input:hover {
+    background-color: #1890ff;
+    color: #ffffff;
+    cursor: pointer;
+  }
+
+  .template-buttons > input:disabled {
+    color: #d0d0d0;
+    cursor: not-allowed;
+  }
+
+  .template-buttons > div {
+    flex: 1;
+    /* all the elements vertically aligned in middle */
+    display: flex;
+    align-items: center;
+  }
+  .template-buttons h3 {
+    margin-top: 0;
+  }
+  /* section */
+  .template-section {
+    display: flex;
+    gap: 10px;
+    margin: 0px;
+  }
+  .template-section > div {
+    flex: 1;
+    max-width: 33%;
+  }
+
+  .template-section-50 {
+    display: flex;
+    gap: 10px;
+    margin: 0px;
+  }
+  
+  .template-section-50 > div {
+    flex: 1;
+    max-width: 50%;
+  }
+
+  .template-section-100 {
+    display: flex;
+    gap: 10px;
+    margin: 0px;
+  }
+
+  .template-section-100 > div {
+    flex: 1;
+    max-width: 100%;
+  }
+
+  .error {
+    background-color: yellow;
+    color: red;
+    font-weight: bolder;
+  }
+  

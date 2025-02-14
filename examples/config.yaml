@@ -1,0 +1,25 @@
+version: 1.0.0
+collector_home: /Users/howardyoo/temp/project-tester-setup
+collector_version: 0.118.0
+refinery_home: /Users/howardyoo/temp/project-tester-setup
+refinery_version: 2.9.2
+otel_collector:
+  bin_path: /Users/howardyoo/temp/project-tester-setup/otelcol-contrib
+  config_path: /Users/howardyoo/temp/project-tester-setup/otelcol-config.yml
+  send_auto: false
+  send_endpoint: https://api.honeycomb.io
+  send_apikey: ""
+refinery:
+  bin_path: /Users/howardyoo/temp/project-tester-setup/refinery
+  config_path: /Users/howardyoo/temp/project-tester-setup/refinery-config.yml
+  rule_path: /Users/howardyoo/temp/project-tester-setup/refinery-rule.yml
+  send_auto: false
+  send_endpoint: https://api.honeycomb.io
+  send_apikey: ""
+work_dir: /Users/howardyoo/Projects/project-tester
+template_dir: /Users/howardyoo/Projects/project-tester/templates
+collector_installed: true
+refinery_installed: true
+collector_config_exists: true
+refinery_config_exists: true
+refinery_rule_exists: true

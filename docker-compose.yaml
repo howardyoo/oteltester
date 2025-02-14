@@ -1,0 +1,9 @@
+services:
+  oteltester:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: oteltester:latest
+    ports:
+      - "3000:3000"
+      - "3001:3001"
