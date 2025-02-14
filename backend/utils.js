@@ -38,7 +38,7 @@ export function json_to_yaml(json_data) {
 export function get_type(pid) {
     const pids = get_pids();
     for(const p of pids) {
-        if(p[0] == pid) {
+        if(p[1] == pid) {
             var command = p[7];
             if(command.includes("refinery")) {
                 return "refinery";
