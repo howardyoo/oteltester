@@ -18,7 +18,7 @@ exporters:
     compression: none
     encoding: json
 
-  debug:
+  logging:
     verbosity: detailed
 
 extensions:
@@ -32,12 +32,12 @@ service:
     traces:
       receivers: [otlp]
       processors: []
-      exporters: [debug, otlphttp/out]
+      exporters: [logging, otlphttp/out]
     metrics:
       receivers: [otlp]
       processors: []
-      exporters: [debug, otlphttp/out]
+      exporters: [logging, otlphttp/out]
     logs:
       receivers: [otlp]
       processors: []
-      exporters: [debug, otlphttp/out]
+      exporters: [logging, otlphttp/out]
