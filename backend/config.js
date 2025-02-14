@@ -5,7 +5,7 @@ import { execSync } from "child_process";
 
 const CONFIG_PATH = "config.yaml";
 var WORK_DIR = process.cwd();
-const architecture = os.arch();     // possible values: 'arm', 'arm64', 'x64', 'ia32'
+var architecture = os.arch();     // possible values: 'arm', 'arm64', 'x64', 'ia32'
 const is64bit = architecture === "arm64" || architecture === "x64";
 if(architecture === "x64") {
     architecture = "amd64";
