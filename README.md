@@ -1,4 +1,10 @@
+# OpenTelemetry Collector and Refinery Tester
+![screenshot](./frontend/images/otel-tester-screen.png)
+# What is it?
+It's a simple web application that allows user to download, install, and test the Opentelemetry Collector, and Honeycomb Refinery together.
+
 # Installation instructions
+You can run the application locally using npm, run in the docker, run in the github codepace, or run in the gitpod.
 
 ## install zstd
 - refinery communicates using zstd, so you need to have zstd library installed
