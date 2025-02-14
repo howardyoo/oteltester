@@ -83,6 +83,7 @@ export function install_otelcol(ws, version) {
     var file_name = "otelcol-contrib_" + version + "_" + config["os.platform"] + "_" + config["os.arch"] + ".tar.gz";
 
     var url = "https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v" + version + "/" + file_name;
+    console.log("installation url: ", url);
     var targz = config["collector_home"] + "/otelcol-contrib.tar.gz";
     var file = fs.createWriteStream(targz);
     https.https.get(url, function(response) {
@@ -166,6 +167,7 @@ export function install_refinery(ws,version) {
 
     var file_name = "refinery-" + config["os.platform"] + "-" + config["os.arch"];
     var url = "https://github.com/honeycombio/refinery/releases/download/v" + version + "/" + file_name;
+    console.log("installation url: ", url);
     var refinery_temp = config["refinery_home"] + "/refinery-v" + version;
     var refinery_path = config["refinery_home"] + "/refinery";
     var file = fs.createWriteStream(refinery_temp);
