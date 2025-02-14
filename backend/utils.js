@@ -5,12 +5,12 @@ import yaml from "js-yaml";
 // get the pids of the running otelcol or refinery processes in local environment
 export function get_pids() {
     try {
-        const result = execSync("ps -e | grep -E 'otelcol|refinery' | grep -v grep");
+        const result = execSync("ps -ef | grep -E 'otelcol|refinery' | grep -v grep");
         var out = [];
         var lines = result.toString().split("\n").filter(Boolean);
         for(const line of lines) {
             var proc = line.split(/\s+/).filter(Boolean);
-            if(proc[3].includes("otelcol") || proc[3].includes("refinery")) {
+            if(proc[7].includes("otelcol") || proc[7].includes("refinery")) {
                 out[out.length] = proc;
             }
         }
@@ -39,7 +39,7 @@ export function get_type(pid) {
     const pids = get_pids();
     for(const p of pids) {
         if(p[0] == pid) {
-            var command = p[3];
+            var command = p[7];
             if(command.includes("refinery")) {
                 return "refinery";
             } else if(command.includes("otelcol")) {
@@ -54,7 +54,7 @@ export function get_type(pid) {
 export function check_pid(pid) {
     const pids = get_pids();
     for(const p of pids) {
-        if(p[0] == pid) {
+        if(p[1] == pid) {
             return true;
         }
     }

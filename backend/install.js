@@ -11,9 +11,9 @@ export function stop_otelcol() {
     var config_data = get_config();
     var pids = get_pids();
     for(var line of pids) {
-        var pid = line[0];
-        var command = line[3];
-        var config = line[4];
+        var pid = line[1];
+        var command = line[7];
+        var config = line[8];
         var command_name = command.split("/").pop();
         // if the command name contains otel or refinery, process accordingly
         if (command_name.includes("otelcol") && config.includes(config_data.otel_collector.config_path)) {
@@ -35,9 +35,9 @@ export function stop_refinery() {
     var config_data = get_config();
     var pids = get_pids();
     for(var line of pids) {
-        var pid = line[0];
-        var command = line[3];
-        var config = line[4];
+        var pid = line[1];
+        var command = line[7];
+        var config = line[8];
         var command_name = command.split("/").pop();
         // if the command name contains otel or refinery, process accordingly
         if (command_name.includes("refinery") && config.includes(config_data.refinery.config_path)) {
