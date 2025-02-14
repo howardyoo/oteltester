@@ -1,1 +1,7 @@
 node_modules/
+runtime/otelcol-config.yml
+runtime/otelcol-contrib
+runtime/README.md
+runtime/refinery
+runtime/refinery-config.yml
+runtime/refinery-rule.yml
