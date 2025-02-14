@@ -1,17 +1,17 @@
-const express = require("express");
-const path = require("path");
-const { exec } = require("child_process");
-const { get_pids, check_pid, get_type, save_yaml, read_yaml, save_json, read_json } = require("./utils.js");
-const { get_config, save_config, get_workdir } = require("./config.js");
-const { get_https_options } = require('./security.js');
-const { install_otelcol, install_refinery } = require("./install.js");
-const http = require("http");
-const https = require("https");
-const { WebSocketServer } = require("ws");
-const { spawn } = require("child_process");
-const { decode, decodeMulti, decodeStream, decodeMultiStream} = require("@msgpack/msgpack");
-const compression = require("compression");
-const zstd = require("fast-zstd");
+import express from "express";
+import path from "path";
+import { exec } from "child_process";
+import { get_pids, check_pid, get_type, save_yaml, read_yaml, save_json, read_json } from "./utils.js";
+import { get_config, save_config, get_workdir } from "./config.js";
+import { get_https_options } from './security.js';
+import { install_otelcol, install_refinery } from "./install.js";
+import http from "http";
+import https from "https";
+import { WebSocketServer } from "ws";
+import { spawn } from "child_process";
+import { decode, decodeMulti, decodeStream, decodeMultiStream} from "@msgpack/msgpack";
+import compression from "compression";
+import zstd from "fast-zstd";
 
 const app = express();
 const PORT = 3000;
@@ -20,14 +20,14 @@ const HTTPS_PORT = 3001;
 const WORK_DIR = get_workdir();
 
 // Middleware to serve static files from 'frontend' folder
-app.use(express.static(path.join(__dirname, "../frontend")));
+app.use(express.static(path.join(WORK_DIR, "./frontend")));
 app.use(express.json({limit: '10mb'}));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(express.text());
 app.use(compression());
 
 // middleware to serve json payload as input
-httpsApp.use(express.static(path.join(__dirname, "../frontend")));
+httpsApp.use(express.static(path.join(WORK_DIR, "./frontend")));
 httpsApp.use(express.json({limit: '10mb'}));
 httpsApp.use(express.urlencoded({ limit: '10mb', extended: true }));
 httpsApp.use(express.text());

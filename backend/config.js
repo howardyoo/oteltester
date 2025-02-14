@@ -1,6 +1,6 @@
 import { read_yaml, save_yaml, yaml_to_json, json_to_yaml } from "./utils.js";
 import fs from "fs";
-import os from "os"
+import os from "os";
 import { execSync } from "child_process";
 
 const CONFIG_PATH = "config.yaml";
