@@ -31,10 +31,11 @@ var otelcol_config_current = null;
 var refinery_config_current = null;
 var refinery_rule_current = null;
 
-function init_refinery_out_ws() {
+function init_refinery_out_ws(config) {
     if (refinery_out_ws == null) {
         try {
-            refinery_out_ws = new WebSocket("ws://localhost:3000/refinery_out");
+            // refinery_out_ws = new WebSocket("ws://localhost:3000/refinery_out");
+            refinery_out_ws = new WebSocket(`ws://${config.host_name}/refinery_out`);
             refinery_out_ws.onmessage = (event) => {
                 const message = event.data;
                 // console.log("refinery_out_ws: ", message);
@@ -55,19 +56,19 @@ function init_refinery_out_ws() {
                 console.log("refinery_out_ws: Websocket connection closed.");
                 refinery_out_ws = null;
                 refinery_out_ws_ping = 0;
-                setTimeout(init_refinery_out_ws, 1000);
+                setTimeout(init_refinery_out_ws(config), 1000);
             };
         } catch (error) {
             console.error("Error initializing refinery_out_ws:", error);
-            setTimeout(init_refinery_out_ws, 1000);
+            setTimeout(init_refinery_out_ws(config), 1000);
         }
     }
 }
 
-function init_otelcol_out_ws() {
+function init_otelcol_out_ws(config) {
     if (otelcol_out_ws == null) {
         try {
-            otelcol_out_ws = new WebSocket("ws://localhost:3000/otelcol_out");
+            otelcol_out_ws = new WebSocket(`ws://${config.host_name}/otelcol_out`);
             otelcol_out_ws.onmessage = (event) => {
                 const message = event.data;
                 // console.log("otelcol_out_ws: ", message);
@@ -114,20 +115,20 @@ function init_otelcol_out_ws() {
                 console.log("otelcol_out_ws: Websocket connection closed.");
                 otelcol_out_ws = null;
                 otelcol_out_ws_ping = 0;
-                setTimeout(init_otelcol_out_ws, 1000);
+                setTimeout(init_otelcol_out_ws(config), 1000);
             };
         } catch (error) {
             console.error("Error initializing otelcol_out_ws:", error);
-            setTimeout(init_otelcol_out_ws, 1000);
+            setTimeout(init_otelcol_out_ws(config), 1000);
         }
     }
 }
 
-function init_otelcol_stdout_ws() {
+function init_otelcol_stdout_ws(config) {
     // setup the websocket for otelcol standard output
     if (otelcol_stdout_ws == null) {
         try {
-            otelcol_stdout_ws = new WebSocket("ws://localhost:3000/otelcol_stdout");
+            otelcol_stdout_ws = new WebSocket(`ws://${config.host_name}/otelcol_stdout`);
             otelcol_stdout_ws.onmessage = (event) => {
                 const message = event.data;
                 // console.log("otelcol_stdout_ws: ", message);
@@ -148,20 +149,20 @@ function init_otelcol_stdout_ws() {
                 console.log("otelcol_stdout_ws: Websocket connection closed.");
                 otelcol_stdout_ws = null;
                 otelcol_stdout_ws_ping = 0;
-                setTimeout(init_otelcol_stdout_ws, 1000);
+                setTimeout(init_otelcol_stdout_ws(config), 1000);
             };
         } catch (error) {
             console.error("Error initializing otelcol_stdout_ws:", error);
-            setTimeout(init_otelcol_stdout_ws, 1000);
+            setTimeout(init_otelcol_stdout_ws(config), 1000);
         }
     }  
 }
 
-function init_refinery_stdout_ws() {
+function init_refinery_stdout_ws(config) {
     // setup the websocket for refinery standard output
     if (refinery_stdout_ws == null) {
         try {
-            refinery_stdout_ws = new WebSocket("ws://localhost:3000/refinery_stdout");
+            refinery_stdout_ws = new WebSocket(`ws://${config.host_name}/refinery_stdout`);
             refinery_stdout_ws.onmessage = (event) => {
                 const message = event.data;
                 // console.log("refinery_stdout_ws: ", message);
@@ -182,20 +183,20 @@ function init_refinery_stdout_ws() {
                 console.log("refinery_stdout_ws: Websocket connection closed.");
                 refinery_stdout_ws = null;
                 refinery_stdout_ws_ping = 0;
-                setTimeout(init_refinery_stdout_ws, 1000);
+                setTimeout(init_refinery_stdout_ws(config), 1000);
             };
         } catch (error) {
             console.error("Error initializing refinery_stdout_ws:", error);
-            setTimeout(init_refinery_stdout_ws, 1000);
+            setTimeout(init_refinery_stdout_ws(config), 1000);
         }
     }
 }
 
-function init_otelcol_setup_ws() {
+function init_otelcol_setup_ws(config) {
     // setup the websocket for otelcol setup
     if (otelcol_setup_ws == null) {
         try {
-            otelcol_setup_ws = new WebSocket("ws://localhost:3000/otelcol_setup");
+            otelcol_setup_ws = new WebSocket(`ws://${config.host_name}/otelcol_setup`);
             otelcol_setup_ws.onmessage = (event) => {
                 const message = event.data;
                 if(message == "{{cancelled}}") {
@@ -240,20 +241,20 @@ function init_otelcol_setup_ws() {
                 otelcol_setup_ws = null;
                 otelcol_setup_ws_ping = 0;
                 // try to reconnect
-                setTimeout(init_otelcol_setup_ws, 1000);
+                setTimeout(init_otelcol_setup_ws(config), 1000);
             };
         } catch (error) {
             console.error("Error initializing otelcol_setup_ws:", error);
-            setTimeout(init_otelcol_setup_ws, 1000);
+            setTimeout(init_otelcol_setup_ws(config), 1000);
         }
     }
 }
 
-function init_refinery_setup_ws() {
+function init_refinery_setup_ws(config) {
     // setup the websocket for refinery setup
     if (refinery_setup_ws == null) {
         try {
-            refinery_setup_ws = new WebSocket("ws://localhost:3000/refinery_setup");
+            refinery_setup_ws = new WebSocket(`ws://${config.host_name}/refinery_setup`);
             refinery_setup_ws.onmessage = (event) => {
                 const message = event.data;
                 if(message == "{{cancelled}}") {
@@ -292,24 +293,25 @@ function init_refinery_setup_ws() {
                 refinery_setup_ws = null;
                 refinery_setup_ws_ping = 0;
                 // try to reconnect
-                setTimeout(init_refinery_setup_ws, 1000);
+                setTimeout(init_refinery_setup_ws(config), 1000);
             };
         } catch (error) {
             console.error("Error initializing refinery_setup_ws:", error);
-            setTimeout(init_refinery_setup_ws, 1000);
+            setTimeout(init_refinery_setup_ws(config), 1000);
         }
     }
 }
 
 // initialize the websocket
-function init_ws() {
+// config is json object from config.yaml
+function init_ws(config) {
 // setup the websocket for refinery output
-    init_otelcol_out_ws();
-    init_refinery_out_ws();
-    init_otelcol_stdout_ws();
-    init_refinery_stdout_ws();
-    init_otelcol_setup_ws();
-    init_refinery_setup_ws();
+    init_otelcol_out_ws(config);
+    init_refinery_out_ws(config);
+    init_otelcol_stdout_ws(config);
+    init_refinery_stdout_ws(config);
+    init_otelcol_setup_ws(config);
+    init_refinery_setup_ws(config);
 }
 
 /**
@@ -327,14 +329,14 @@ async function init_page() {
         setTimeout(init_page, 100);
     } else {
         // initialize the websocket, template, and textareas
-        init_ws();
+        var response = await fetch('/api/config');
+        var data = await response.json();
+        init_ws(data);
         // if collector and refinery is not set, we need to fetch them.
         if (otel_collector == null || refinery == null) {
             // fetch the config
             // fetch synchronously and catch error
             try {
-                var response = await fetch('/api/config');
-                var data = await response.json();
                 otel_collector = data.otel_collector;
                 refinery = data.refinery;
                 work_dir = data.work_dir;
