@@ -11,16 +11,6 @@ receivers:
 
 processors:
   batch:
-  resource/test:
-    attributes:
-      - key: test.res.attribute
-        action: insert
-        value: "newly added resource attribute"
-  transform/test:
-    trace_statements:
-      - context: span  # span level transformation
-        statements:
-          - set(attributes["added"], "this value was added by the transformation")
 
 exporters:
   otlphttp/out:
@@ -41,7 +31,7 @@ service:
   pipelines:
     traces:
       receivers: [otlp]
-      processors: [resource/test]
+      processors: []
       exporters: [debug, otlphttp/out]
     metrics:
       receivers: [otlp]
