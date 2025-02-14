@@ -35,7 +35,12 @@ function init_refinery_out_ws(config) {
     if (refinery_out_ws == null) {
         try {
             // refinery_out_ws = new WebSocket("ws://localhost:3000/refinery_out");
-            refinery_out_ws = new WebSocket(`ws://${config.host_name}/refinery_out`);
+            // setup a secure websocket if the config.host_name is not localhost
+            if(config.host_name.includes("localhost")) {
+                refinery_out_ws = new WebSocket(`ws://${config.host_name}/refinery_out`);
+            } else {
+                refinery_out_ws = new WebSocket(`wss://${config.host_name}/refinery_out`);
+            }
             refinery_out_ws.onmessage = (event) => {
                 const message = event.data;
                 // console.log("refinery_out_ws: ", message);
@@ -68,7 +73,12 @@ function init_refinery_out_ws(config) {
 function init_otelcol_out_ws(config) {
     if (otelcol_out_ws == null) {
         try {
-            otelcol_out_ws = new WebSocket(`ws://${config.host_name}/otelcol_out`);
+            // setup a secure websocket if the config.host_name is not localhost
+            if(config.host_name.includes("localhost")) {
+                otelcol_out_ws = new WebSocket(`ws://${config.host_name}/otelcol_out`);
+            } else {
+                otelcol_out_ws = new WebSocket(`wss://${config.host_name}/otelcol_out`);
+            }
             otelcol_out_ws.onmessage = (event) => {
                 const message = event.data;
                 // console.log("otelcol_out_ws: ", message);
@@ -128,7 +138,12 @@ function init_otelcol_stdout_ws(config) {
     // setup the websocket for otelcol standard output
     if (otelcol_stdout_ws == null) {
         try {
-            otelcol_stdout_ws = new WebSocket(`ws://${config.host_name}/otelcol_stdout`);
+            // setup a secure websocket if the config.host_name is not localhost
+            if(config.host_name.includes("localhost")) {
+                otelcol_stdout_ws = new WebSocket(`ws://${config.host_name}/otelcol_stdout`);
+            } else {
+                otelcol_stdout_ws = new WebSocket(`wss://${config.host_name}/otelcol_stdout`);
+            }
             otelcol_stdout_ws.onmessage = (event) => {
                 const message = event.data;
                 // console.log("otelcol_stdout_ws: ", message);
@@ -162,7 +177,12 @@ function init_refinery_stdout_ws(config) {
     // setup the websocket for refinery standard output
     if (refinery_stdout_ws == null) {
         try {
-            refinery_stdout_ws = new WebSocket(`ws://${config.host_name}/refinery_stdout`);
+            // setup a secure websocket if the config.host_name is not localhost
+            if(config.host_name.includes("localhost")) {
+                refinery_stdout_ws = new WebSocket(`ws://${config.host_name}/refinery_stdout`);
+            } else {
+                refinery_stdout_ws = new WebSocket(`wss://${config.host_name}/refinery_stdout`);
+            }
             refinery_stdout_ws.onmessage = (event) => {
                 const message = event.data;
                 // console.log("refinery_stdout_ws: ", message);
@@ -196,7 +216,12 @@ function init_otelcol_setup_ws(config) {
     // setup the websocket for otelcol setup
     if (otelcol_setup_ws == null) {
         try {
-            otelcol_setup_ws = new WebSocket(`ws://${config.host_name}/otelcol_setup`);
+            // setup a secure websocket if the config.host_name is not localhost
+            if(config.host_name.includes("localhost")) {
+                otelcol_setup_ws = new WebSocket(`ws://${config.host_name}/otelcol_setup`);
+            } else {
+                otelcol_setup_ws = new WebSocket(`wss://${config.host_name}/otelcol_setup`);
+            }
             otelcol_setup_ws.onmessage = (event) => {
                 const message = event.data;
                 if(message == "{{cancelled}}") {
@@ -254,7 +279,12 @@ function init_refinery_setup_ws(config) {
     // setup the websocket for refinery setup
     if (refinery_setup_ws == null) {
         try {
-            refinery_setup_ws = new WebSocket(`ws://${config.host_name}/refinery_setup`);
+            // setup a secure websocket if the config.host_name is not localhost
+            if(config.host_name.includes("localhost")) {
+                refinery_setup_ws = new WebSocket(`ws://${config.host_name}/refinery_setup`);
+            } else {
+                refinery_setup_ws = new WebSocket(`wss://${config.host_name}/refinery_setup`);
+            }
             refinery_setup_ws.onmessage = (event) => {
                 const message = event.data;
                 if(message == "{{cancelled}}") {
