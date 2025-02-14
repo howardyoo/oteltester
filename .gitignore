@@ -1,2 +1,2 @@
-./runtime
-./node_modules
+runtime/
+node_modules/
