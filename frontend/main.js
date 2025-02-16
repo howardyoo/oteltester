@@ -185,6 +185,7 @@ function refresh_main() {
       otelcol_html += "<option value='true'>on</option>";
       otelcol_html += "<option value='false' selected='true'>off</option>";
       otelcol_html += "</select>";
+      otelcol_html += " Results <select id='otelcol_results'></select>";  // result cache.
       otelcol_html += "</div></form><span id='otelcol_send_status'></span></div></div>";
       
       document.getElementById('otelcol').innerHTML = otelcol_html;

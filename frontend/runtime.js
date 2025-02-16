@@ -70,6 +70,19 @@ function init_refinery_out_ws(config) {
     }
 }
 
+function append_otelcol_result(message) {
+    var select = document.getElementById("otelcol_results");
+    var option = document.createElement("option");
+    option.result = message;
+    var num_options = select.options.length;
+    option.text = num_options + 1;
+    select.appendChild(option);
+    // update the selected element
+    select.selectedIndex = num_options;
+    // return the request number
+    return option.text;
+}
+
 function init_otelcol_out_ws(config) {
     if (otelcol_out_ws == null) {
         try {
@@ -91,6 +104,8 @@ function init_otelcol_out_ws(config) {
                     // check if the send mode is set to auto, and if so,
                     // we should send this off to the whatever output endpoint - that can receive otlp json
                     otelcol_json_output.setValue(message);
+                    // put message into the cache, so that it can be revisited.
+                    append_otelcol_result(message);
                     otelcol_json_output.setCursor(otelcol_json_output.lineCount(), 0);
                     // if the send auto mode is enabled, then send the data to the endpoint.
                     if (document.getElementById("otelcol_send_auto").value == "true") {
@@ -423,6 +438,13 @@ async function init_page() {
             }
         }
 
+        // setup the event listener for the otelcol_results select element
+        document.getElementById("otelcol_results").addEventListener("change", (event) => {
+            var selected_index = event.target.selectedIndex;
+            var result = otelcol_results[selected_index].result;
+            otelcol_json_output.setValue(result);
+        }, { passive: true});
+
         document.getElementById("otelcol_install_cancel").addEventListener("click", () => {
             console.log("Cancelling... otel collector installation");
             // will send cancel signal to the web socket
@@ -648,6 +670,9 @@ async function init_page() {
                 // document.getElementById("otelcol_result").value = "";
                 otelcol_json_output.setValue("");
                 otelcol_output.setValue("");
+                // clear the result cache
+                var select = document.getElementById("otelcol_results");
+                select.innerHTML = "";
             }, { passive: true});
 
             // export the otel config to otelbin.io
