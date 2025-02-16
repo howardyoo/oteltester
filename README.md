@@ -9,11 +9,20 @@ You can run the application locally using npm, run in the docker, run in the git
 ## install zstd
 - refinery communicates using zstd, so you need to have zstd library installed
 
+for linux:
+```
+sudo apt-get install zstd
+```
+```
+sudo apk add zstd
+```
+
 for macos:
 ```
 brew install zstd
 ```
-(it may already be installed)
+
+### Additional instructions for macos users
 - also, link the zstd dylib to the path that npm looks for. Somehow, in macos, npm tries to look for the dylib in `/usr/local/lib/libzstd.1.dylib`, but the actual location is in `/opt/homebrew/Cellar/zstd/1.5.x/lib/libzstd.1.dylib`. The version number `x` can vary, so set it accordingly as such:
 
 ```
@@ -21,7 +30,11 @@ sudo ln -s /opt/homebrew/Cellar/zstd/1.5.6/lib/libzstd.1.5.6.dylib /usr/local/li
 ```
 
 # Running the application locally
-run the application using npm:
+- install the dependencies using npm:
+```
+npm install
+```
+- run the application using npm:
 ```
 npm run
 ```
