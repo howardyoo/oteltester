@@ -31,6 +31,10 @@ var otelcol_config_current = null;
 var refinery_config_current = null;
 var refinery_rule_current = null;
 
+// currently selected item from result.
+// if none, then -1
+var current_result = -1;
+
 function init_refinery_out_ws(config) {
     if (refinery_out_ws == null) {
         try {
@@ -80,6 +84,7 @@ function append_otelcol_result(message) {
     // update the selected element
     select.selectedIndex = num_options;
     // return the request number
+    current_result = num_options;
     return option.text;
 }
 
@@ -439,10 +444,20 @@ async function init_page() {
         }
 
         // setup the event listener for the otelcol_results select element
+        // invoked when the user selects a different result from the dropdown
         document.getElementById("otelcol_results").addEventListener("change", (event) => {
             var selected_index = event.target.selectedIndex;
-            var result = otelcol_results[selected_index].result;
+            var result = event.target.options[selected_index].result;
+            // before setting the result, get the current result.
+            var _result = otelcol_json_output.getValue();
+            // compare the result with the current result, and if they are different, update it.
+            if( _result != event.target.options[current_result].result) {
+                event.target.options[current_result].result = _result;
+            }
+            // set the result to the otelcol_json_output textarea
             otelcol_json_output.setValue(result);
+            // update the current result
+            current_result = selected_index;
         }, { passive: true});
 
         document.getElementById("otelcol_install_cancel").addEventListener("click", () => {
@@ -670,6 +685,7 @@ async function init_page() {
                 // document.getElementById("otelcol_result").value = "";
                 otelcol_json_output.setValue("");
                 otelcol_output.setValue("");
+                current_result = -1;
                 // clear the result cache
                 var select = document.getElementById("otelcol_results");
                 select.innerHTML = "";
@@ -722,27 +738,32 @@ async function init_page() {
             }, { passive: true});
 
             // send json to otel collector
-            document.getElementById("otel_send").addEventListener("click", event => {
+            document.getElementById("otel_input_send").addEventListener("click", event => {
                 console.log("sending json to otel collector");
-                var otelcol_url = document.getElementById("otelcol_url").value;
-                // var json_data = document.getElementById("otel_input").value;
+                var otelcol_url = document.getElementById("otel_input_url").value;
                 var json_data = otelcol_json_input.getValue();
 
                 // apply template to the json_data right before sending
                 json_data = JSON.stringify(apply_template(JSON.parse(json_data)));
+                var apikey = document.getElementById("otel_input_send_apikey").value;
 
                 fetch('/api/send_json?url=' + encodeURIComponent(otelcol_url), {
                     method: 'POST',
                     body: json_data,
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'x-honeycomb-team': apikey
                     }
                 })
                 .then(response => response.json()) 
                 .then(data => {
                     console.log(data.message);
+                    document.getElementById("otel_input_send_status").innerHTML = data.message;
                 })
-                .catch(error => console.error('Error sending json:', error));
+                .catch(error => {
+                    console.error('Error sending json:', error);
+                    document.getElementById("otel_input_send_status").innerHTML = error.message;
+                });
             }, { passive: true});
         }
     }

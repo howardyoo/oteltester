@@ -58,6 +58,12 @@ div.status {
   color: gray;
 }
 
+#otel_input_send_status {
+  font-size: 12px;
+  margin-left: 10px;
+  color: gray;
+}
+
 body {
     font-family: Roboto, sans-serif;
     margin: 0;

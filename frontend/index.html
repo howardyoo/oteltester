@@ -109,12 +109,17 @@
       <div>
         <h3>📝 OTEL Input</h3>
         <textarea id="otel_input" rows="20" cols="80"></textarea>
-        <div class="template-buttons">
-          Target Endpoint
-          <input type="text" id="otelcol_url" name="otel_url" value="http://localhost:4318" />
-          <input type="button" id="otel_send" value="⏵ Send"/>
-          <input type="button" id="otel_target_reset" value="Reset"/>
-        </div>
+        <form><div class="template-buttons">
+          📡
+          <select id="otel_input_url">
+            <option value="http://localhost:4318" selected>Local OTEL collector</option>
+            <option value='https://api.honeycomb.io'>https://api.honeycomb.io</option>
+            <option value='https://api.eu1.honeycomb.io'>https://api.eu1.honeycomb.io</option>
+          </select>
+          API Key <input type='password' id='otel_input_send_apikey' placeholder='API Key' autocomplete='off' value='1234567890'/>
+          <input type="button" id="otel_input_send" value="⏵ Send"/>
+        </div></form>
+        <span id='otel_input_send_status'></span>
       </div>
       <div>
         <h3>📒 Resources</h3>
