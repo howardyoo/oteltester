@@ -34,6 +34,8 @@ var refinery_rule_current = null;
 // currently selected item from result.
 // if none, then -1
 var current_result = -1;
+// currently selected item from input.
+var current_input = -1;
 
 function init_refinery_out_ws(config) {
     if (refinery_out_ws == null) {
@@ -72,6 +74,20 @@ function init_refinery_out_ws(config) {
             setTimeout(init_refinery_out_ws(config), 1000);
         }
     }
+}
+
+function append_otel_input(input) {
+    var select = document.getElementById("otel_inputs");
+    var option = document.createElement("option");
+    option.input = input;
+    var num_options = select.options.length;
+    option.text = num_options + 1;
+    select.appendChild(option);
+    // update the selected element
+    select.selectedIndex = num_options;
+    // return the request number
+    current_input = num_options;
+    return option.text;
 }
 
 function append_otelcol_result(message) {
@@ -443,6 +459,22 @@ async function init_page() {
             }
         }
 
+        // setup the event listener for the otel_inputs select element
+        document.getElementById("otel_inputs").addEventListener("change", (event)=> {
+            var selected_index = event.target.selectedIndex;
+            var input = event.target.options[selected_index].input;
+            // before setting the input, get the current input.
+            var _input = otelcol_json_input.getValue();
+            // compare the input with the current input, and if they are different, update it.
+            if( _input != event.target.options[current_input].input) {
+                event.target.options[current_input].input = _input;
+            }
+            // set the input to the otel_input textarea
+            otelcol_json_input.setValue(input);
+            // update the current input`
+            current_input = selected_index;
+        }, { passive: true });
+
         // setup the event listener for the otelcol_results select element
         // invoked when the user selects a different result from the dropdown
         document.getElementById("otelcol_results").addEventListener("change", (event) => {
@@ -679,6 +711,18 @@ async function init_page() {
                 refinery_sample_result.setValue("");
             }, { passive: true});
 
+            // clear button for otel input
+            document.getElementById("otel_input_clear").addEventListener("click", event => {
+                console.log("Clearing... otel inputs");
+                // document.getElementById("otel_input").value = "";
+                otelcol_json_input.setValue("");
+                current_input = -1;
+                // clear the input cache
+                var select = document.getElementById("otel_inputs");
+                select.innerHTML = "";
+            }, { passive: true});
+
+            // clear button for otel collector result
             document.getElementById("otelcol_clear").addEventListener("click", event => {
                 console.log("Clearing... otel collector outputs");
                 // document.getElementById("otelcol_output").value = "";
@@ -742,6 +786,9 @@ async function init_page() {
                 console.log("sending json to otel collector");
                 var otelcol_url = document.getElementById("otel_input_url").value;
                 var json_data = otelcol_json_input.getValue();
+
+                // cache the json data to be appended
+                append_otel_input(json_data);
 
                 // apply template to the json_data right before sending
                 json_data = JSON.stringify(apply_template(JSON.parse(json_data)));

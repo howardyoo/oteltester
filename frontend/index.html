@@ -118,6 +118,8 @@
           </select>
           API Key <input type='password' id='otel_input_send_apikey' placeholder='API Key' autocomplete='off' value='1234567890'/>
           <input type="button" id="otel_input_send" value="⏵ Send"/>
+          Inputs <select id='otel_inputs'></select>
+          <input type="button" id="otel_input_clear" value="Clear"/>
         </div></form>
         <span id='otel_input_send_status'></span>
       </div>
@@ -127,6 +129,10 @@
         <ul>
           <li><a href="https://github.com/open-telemetry/opentelemetry-proto/tree/main/examples" target="_blank" rel="noopener">OTLP JSON request examples</a></li>
         </ul>
+        <h3>✂️ Edits</h3>
+        <div>
+          <input type="button" value="set timestamp to zero (TBD)"/>
+        </div>
       </div>
     </div>
     <div id="otelcol_top">
