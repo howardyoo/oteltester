@@ -1,5 +1,5 @@
 # docker file for otel refinery tester
-FROM node:latest
+FROM node:latest AS base
 
 WORKDIR /app
 
@@ -8,6 +8,12 @@ apt-get install -y --no-install-recommends \
 build-essential
 
 COPY package.json .
+RUN npm install
+
+# stage 2
+FROM base AS derived
+
+WORKDIR /app
 # copy everything excluding node_modules
 RUN mkdir runtime
 COPY backend ./backend
@@ -16,7 +22,6 @@ COPY certs ./certs
 COPY examples ./examples
 COPY templates ./templates
 COPY config.yaml .
-RUN npm install
 
 EXPOSE 3000
 EXPOSE 3001
