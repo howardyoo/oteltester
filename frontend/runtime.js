@@ -37,6 +37,9 @@ var current_result = -1;
 // currently selected item from input.
 var current_input = -1;
 
+// currently selected item from edit section
+var current_edit = null;
+
 function init_refinery_out_ws(config) {
     if (refinery_out_ws == null) {
         try {
@@ -380,6 +383,89 @@ function init_ws(config) {
     init_refinery_setup_ws(config);
 }
 
+function toggle_edit_section(section, button) {
+    if(current_edit) {
+        if(current_edit == section) {
+            document.getElementById("otelcol_" + section + "_section").style.display = "none";
+            document.getElementById("otelcol_" + current_edit).value = "▸ " + document.getElementById("otelcol_" + current_edit).value.substring(2);
+            document.getElementById("otelcol_" + current_edit).classList.remove("active");
+            current_edit = null;
+        } else {
+            document.getElementById("otelcol_" + current_edit + "_section").style.display = "none";
+            document.getElementById("otelcol_" + current_edit).value = "▸ " + document.getElementById("otelcol_" + current_edit).value.substring(2);
+            document.getElementById("otelcol_" + current_edit).classList.remove("active");
+            document.getElementById("otelcol_" + section + "_section").style.display = "flex";
+            current_edit = section;
+            var button_value = button.value;
+            button.value = "▾ " + button_value.substring(2);
+            button.classList.add("active");
+        }
+    } else {
+        document.getElementById("otelcol_" + section + "_section").style.display = "flex";
+        current_edit = section;
+        var button_value = button.value;
+        button.value = "▾ " + button_value.substring(2);
+        button.classList.add("active");
+    }
+}
+
+// list of otel collector modules
+// receivers, processors, exporters, extensions, connectors, etc.
+var otel_modules = null;
+
+// initializes information about otel modules (receivers, processors, exporters, extensions)
+async function init_edit_section() {
+
+    // get the list of otel collector modules
+    const response = await fetch('/api/otelcol_modules');
+    otel_modules = await response.json();
+
+    var edit_section = document.getElementById("otelcol_edit_section");
+    // get four html files for receivers, processors, exporters, and extensions
+    fetch('./receivers.html')
+        .then(response => response.text())
+        .then(html => {
+            edit_section.appendChild(document.createRange().createContextualFragment(html));
+        });
+    fetch('./processors.html')
+        .then(response => response.text())
+        .then(html => {
+            edit_section.appendChild(document.createRange().createContextualFragment(html));
+        }); 
+    fetch('./exporters.html')
+        .then(response => response.text())
+        .then(html => {
+            edit_section.appendChild(document.createRange().createContextualFragment(html));
+        });
+    fetch('./connectors.html')
+        .then(response => response.text())
+        .then(html => {
+            edit_section.appendChild(document.createRange().createContextualFragment(html));
+        });
+    fetch('./extensions.html')
+        .then(response => response.text())
+        .then(html => { 
+            edit_section.appendChild(document.createRange().createContextualFragment(html));
+        });
+
+    // add actions for the buttons receivers, processors, exporters, and extensions
+    document.getElementById("otelcol_receivers").addEventListener("click", (event) => {
+        toggle_edit_section("receivers", event.currentTarget);
+    }, { passive: true});
+    document.getElementById("otelcol_processors").addEventListener("click", (event) => {
+        toggle_edit_section("processors", event.currentTarget);
+    }, { passive: true});
+    document.getElementById("otelcol_extensions").addEventListener("click", (event) => {
+        toggle_edit_section("extensions", event.currentTarget);
+    }, { passive: true});
+    document.getElementById("otelcol_exporters").addEventListener("click", (event) => {
+        toggle_edit_section("exporters", event.currentTarget);
+    }, { passive: true});
+    document.getElementById("otelcol_connectors").addEventListener("click", (event) => {
+        toggle_edit_section("connectors", event.currentTarget);
+    }, { passive: true});
+}
+
 /**
  * logics to initialize all the 
  * @returns 
@@ -398,6 +484,7 @@ async function init_page() {
         var response = await fetch('/api/config');
         var data = await response.json();
         init_ws(data);
+        await init_edit_section();
         // if collector and refinery is not set, we need to fetch them.
         if (otel_collector == null || refinery == null) {
             // fetch the config

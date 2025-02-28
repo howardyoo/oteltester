@@ -1,0 +1,43 @@
+<div id="otelcol_exporters_section" class="template-section-100" style="display: none;">
+    <div class="edit-section">
+        <div class="template-section-50">
+            <div>
+                <h3>🚀 Exporters</h3>
+                <div id="otelcol_exporters_list" class="button-list"></div>
+            </div>
+            <div class="info-outer-section">
+                <div id="otelcol_exporter_info" class="info-section"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+    function init_exporters() {
+        if (document.getElementById("otelcol_exporters_section") == null) {
+            setTimeout(init_exporters, 100);
+        } else {
+            if(otel_modules != null) {
+                const exporters_list = otel_modules['exporter'];
+                for(var exporter of exporters_list) {
+                    const button = document.createElement("button");
+                    button.id = "exporter_button_" + exporter;
+                    button.value = exporter;
+                    button.innerText = exporter;
+                    button.addEventListener("click", (event) => {
+                        // load the exporter detail to the right section.
+                        const name = event.currentTarget.value;
+                        const url = `https://raw.githubusercontent.com/open-telemetry/opentelemetry-collector-contrib/refs/heads/main/exporter/${name}/README.md`;
+                        const encoded_url = encodeURIComponent(url);
+                        fetch(`/api/get_markdown?url=${encoded_url}&output=html`).then(response => {
+                            response.text().then(text => {
+                                document.getElementById("otelcol_exporter_info").innerHTML = text;
+                            });
+                        });
+                    }, { passive: true});
+                    document.getElementById("otelcol_exporters_list").appendChild(button);
+                }
+            }
+        }
+    }
+    init_exporters();
+</script>

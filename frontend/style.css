@@ -64,6 +64,11 @@ div.status {
   color: gray;
 }
 
+.active {
+  background-color: #1890ff;
+  color: #ffffff;
+}
+
 body {
     font-family: Roboto, sans-serif;
     margin: 0;
@@ -166,3 +171,58 @@ body {
     font-weight: bolder;
   }
   
+  .edit-section {
+    background-color: #f0f0f0;
+    color: #51368d;
+    font-weight: bolder;
+    padding: 5px;
+    border-radius: 5px;
+    border: 1px solid #1890ff;
+    margin: 5px;
+  }
+
+  .button-list button {
+    background-color:#1890ff;
+    color: white;
+    border: none;
+    padding: 5px;
+    font-size: 10px;
+    border-radius: 10px;
+    cursor: pointer;
+    margin: 3px;
+  }
+
+.info-outer-section {
+  border-left: 1px solid #ccc; padding-left: 10px;
+}
+
+.info-section {
+  font-size: 1.0em;
+  font-family: Arial, Helvetica, sans-serif;
+  overflow-y: auto;
+  min-height: 100px;
+  max-height: 500px;
+  white-space: pre-wrap;
+  font-weight: normal;
+}
+
+.info-section h1 {
+  font-size: 1.6em;
+}
+
+.info-section h2 {
+  font-size: 1.4em;
+}
+
+.info-section h3 {
+  font-size: 1.3em;
+}
+
+.info-section h4 {
+  font-size: 1.2em;
+}
+
+.info-section p {
+  font-size: 1.0em;
+}
+

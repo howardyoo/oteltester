@@ -77,6 +77,13 @@ export function save_json(path, json) {
     fs.writeFileSync(path, JSON.stringify(json));
 }
 
+// function to read yaml from the given URL
+export async function read_yaml_from_url(url) {
+    const response = await fetch(url);
+    const data = await response.text();
+    return yaml.load(data);
+}
+
 // function to read json file from the given path.
 // returns json object.
 // in case of error, returns null

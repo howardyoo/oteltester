@@ -166,7 +166,12 @@ function refresh_main() {
       otelcol_html += "<input type='button' id='otelcol_reload' value='⏎ Reload Config'>";
       otelcol_html += "<input type='button' id='otelcol_clear' value='🧹 Clear Outputs'>";
       otelcol_html += "<input type='button' id='otelcol_otelbin' value='📡 Export to otelbin.io'>";
-      otelcol_html += "<input type='button' id='otelcol_import' value='Import from URL'></div>";
+      otelcol_html += "<input type='button' id='otelcol_receivers' value='▸ Receivers'>";
+      otelcol_html += "<input type='button' id='otelcol_processors' value='▸ Processors'>";
+      otelcol_html += "<input type='button' id='otelcol_exporters' value='▸ Exporters'>";
+      otelcol_html += "<input type='button' id='otelcol_connectors' value='▸ Connectors'>";
+      otelcol_html += "<input type='button' id='otelcol_extensions' value='▸ Extensions'></div>";
+      otelcol_html += "<div id='otelcol_edit_section' class='template-section-100'></div>";
       otelcol_html += "<div class='template-section-100'>";
       otelcol_html += "<div><h4>⚙️ " + otel_collector.config_path + "</h4>";
       otelcol_html += "<textarea id='otelcol_config' rows='20' cols='80'></textarea></div></div>";

@@ -1,0 +1,43 @@
+<div id="otelcol_connectors_section" class="template-section-100" style="display: none;">
+    <div class="edit-section">
+        <div class="template-section-50">
+            <div>
+                <h3>⛓️ Connectors</h3>
+                <div id="otelcol_connectors_list" class="button-list"></div>
+            </div>
+            <div class="info-outer-section">
+                <div id="otelcol_connector_info" class="info-section"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+    function init_connectors() {
+        if (document.getElementById("otelcol_connectors_section") == null) {
+            setTimeout(init_connectors, 100);
+        } else {
+            if(otel_modules != null) {
+                const connectors_list = otel_modules['connector'];
+                for(var connector of connectors_list) {
+                    const button = document.createElement("button");
+                    button.id = "connector_button_" + connector;
+                    button.value = connector;
+                    button.innerText = connector;
+                    button.addEventListener("click", (event) => {
+                        // load the connector detail to the right section.
+                        const name = event.currentTarget.value;
+                        const url = `https://raw.githubusercontent.com/open-telemetry/opentelemetry-collector-contrib/refs/heads/main/connector/${name}/README.md`;
+                        const encoded_url = encodeURIComponent(url);
+                        fetch(`/api/get_markdown?url=${encoded_url}&output=html`).then(response => {
+                            response.text().then(text => {
+                                document.getElementById("otelcol_connector_info").innerHTML = text;
+                            });
+                        });
+                    }, { passive: true});
+                    document.getElementById("otelcol_connectors_list").appendChild(button);
+                }
+            }
+        }
+    }
+    init_connectors();
+</script>

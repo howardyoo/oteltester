@@ -1,0 +1,43 @@
+<div id="otelcol_extensions_section" class="template-section-100" style="display: none;">    
+    <div class="edit-section">
+        <div class="template-section-50">
+            <div>
+                <h3>➕ Extensions</h3>
+                <div id="otelcol_extensions_list" class="button-list"></div>
+            </div>
+            <div class="info-outer-section">
+                <div id="otelcol_extension_info" class="info-section"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+    function init_extensions() {
+        if (document.getElementById("otelcol_extensions_section") == null) {
+            setTimeout(init_extensions, 100);
+        } else {
+            if(otel_modules != null) {
+                const extensions_list = otel_modules['extension'];
+                for(var extension of extensions_list) {
+                    const button = document.createElement("button");
+                    button.id = "extension_button_" + extension;
+                    button.value = extension;
+                    button.innerText = extension;
+                    button.addEventListener("click", (event) => {
+                        // load the extension detail to the right section.
+                        const name = event.currentTarget.value;
+                        const url = `https://raw.githubusercontent.com/open-telemetry/opentelemetry-collector-contrib/refs/heads/main/extension/${name}/README.md`;
+                        const encoded_url = encodeURIComponent(url);
+                        fetch(`/api/get_markdown?url=${encoded_url}&output=html`).then(response => {
+                            response.text().then(text => {
+                                document.getElementById("otelcol_extension_info").innerHTML = text;
+                            });
+                        });
+                    }, { passive: true});
+                    document.getElementById("otelcol_extensions_list").appendChild(button);
+                }
+            }
+        }
+    }
+    init_extensions();
+</script>

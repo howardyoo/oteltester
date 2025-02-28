@@ -1,7 +1,7 @@
 import express from "express";
 import path from "path";
 import { exec } from "child_process";
-import { get_pids, check_pid, get_type, save_yaml, read_yaml, save_json, read_json } from "./utils.js";
+import { get_pids, check_pid, get_type, save_yaml, read_yaml, read_yaml_from_url, save_json, read_json } from "./utils.js";
 import { get_config, save_config, get_workdir } from "./config.js";
 import { get_https_options } from './security.js';
 import { install_otelcol, install_refinery } from "./install.js";
@@ -12,6 +12,7 @@ import { spawn } from "child_process";
 import { decode, decodeMulti, decodeStream, decodeMultiStream} from "@msgpack/msgpack";
 import compression from "compression";
 import zstd from "fast-zstd";
+import { marked } from "marked";
 
 const app = express();
 const PORT = 3000;
@@ -317,6 +318,51 @@ app.get("/api/get_json", (req, res) => {
   var json = read_json(path);
   res.setHeader("Content-Type", "application/json");
   res.json(json);
+});
+
+// get the markdown file using the url, and output as the input.
+app.get("/api/get_markdown", (req, res) => {
+  var url = req.query["url"];
+  var output = req.query["output"];
+  try {
+  fetch(url).then(response => {
+      response.text().then(text => {
+        //
+        if(output && output == "html") {
+          res.setHeader("Content-Type", "text/html");
+          res.send(marked(text));
+        } else {
+          res.setHeader("Content-Type", "text/markdown");
+          res.send(text);
+        }
+      });
+    });
+  } catch (err) {
+    console.log(err.message);
+    res.status(500).send({result: false, message: "Failed to get markdown", error: err.toString()});
+  }
+});
+
+// get the list of modules for the most recent otelcol from github
+app.get("/api/otelcol_modules", async (req, res) => {
+  const url = "https://raw.githubusercontent.com/open-telemetry/opentelemetry-collector-contrib/refs/heads/main/versions.yaml";
+  var yaml = await read_yaml_from_url(url);
+  // iterate over the yaml and get the list of modules
+  const module_list = yaml['module-sets']['contrib-base']['modules'];
+  var response = {};
+  response['version'] = yaml['module-sets']['contrib-base']['version'];
+  for(var module of module_list) {
+    // parse the module name and get the last /*/* part
+    const module_name_array = module.split('/');
+    if(module_name_array.length == 5) {
+      if(response[module_name_array[3]] == null) {
+        response[module_name_array[3]] = [];
+      }
+      response[module_name_array[3]][response[module_name_array[3]].length] = module_name_array[4];
+    }
+  }
+  res.setHeader("content-type", "application/json");
+  res.json(response);
 });
 
 // get the json provided in the request body and submit it to 
