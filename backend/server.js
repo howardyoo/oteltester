@@ -345,7 +345,11 @@ app.get("/api/get_markdown", (req, res) => {
 
 // get the list of modules for the most recent otelcol from github
 app.get("/api/otelcol_modules", async (req, res) => {
-  const url = "https://raw.githubusercontent.com/open-telemetry/opentelemetry-collector-contrib/refs/heads/main/versions.yaml";
+  var version = "heads/main";
+  if(req.query["version"]) {
+    version = `tags/v${req.query["version"]}`;
+  }
+  const url = `https://raw.githubusercontent.com/open-telemetry/opentelemetry-collector-contrib/refs/${version}/versions.yaml`;
   var yaml = await read_yaml_from_url(url);
   // iterate over the yaml and get the list of modules
   const module_list = yaml['module-sets']['contrib-base']['modules'];

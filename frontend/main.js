@@ -24,6 +24,83 @@ function scrollToRefinery() {
   scrollElementWithOffset('refinery_top', offset);
 }
 
+// function to update the edit section
+async function update_edit_section(config) {
+  // get the list of otel collector modules
+  var fetch_url = '/api/otelcol_modules';
+  if(config.collector_version && config.collector_version != "0.0.0") {
+      fetch_url += '?version=' + config.collector_version;
+      otelcol_version = config.collector_version;
+  }
+  const response = await fetch(fetch_url);
+  otel_modules = await response.json();
+
+  var edit_section = document.getElementById("otelcol_edit_section");
+  // clear the edit section
+  edit_section.innerHTML = "";
+  // get four html files for receivers, processors, exporters, and extensions
+  fetch('./receivers.html')
+      .then(response => response.text())
+      .then(html => {
+          edit_section.appendChild(document.createRange().createContextualFragment(html));
+          var _button = document.getElementById("otelcol_receivers");
+          if(_button.init == null || _button.init == false) {
+              _button.addEventListener("click", (event) => {
+                  toggle_edit_section("receivers", event.currentTarget);
+              }, { passive: true});
+              _button.init = true;
+          }
+      });
+  fetch('./processors.html')
+      .then(response => response.text())
+      .then(html => {
+          edit_section.appendChild(document.createRange().createContextualFragment(html));
+          var _button = document.getElementById("otelcol_processors");
+          if(_button.init == null || _button.init == false) {
+              _button.addEventListener("click", (event) => {
+                  toggle_edit_section("processors", event.currentTarget);
+              }, { passive: true});
+              _button.init = true;
+          }
+      }); 
+  fetch('./exporters.html')
+      .then(response => response.text())
+      .then(html => {
+          edit_section.appendChild(document.createRange().createContextualFragment(html));
+          var _button = document.getElementById("otelcol_exporters");
+          if(_button.init == null || _button.init == false) {
+              _button.addEventListener("click", (event) => {
+                  toggle_edit_section("exporters", event.currentTarget);
+              }, { passive: true});
+              _button.init = true;
+          }
+      });
+  fetch('./connectors.html')
+      .then(response => response.text())
+      .then(html => {
+          edit_section.appendChild(document.createRange().createContextualFragment(html));
+          var _button = document.getElementById("otelcol_connectors");
+          if(_button.init == null || _button.init == false) {
+              _button.addEventListener("click", (event) => {
+                  toggle_edit_section("connectors", event.currentTarget);
+              }, { passive: true});
+              _button.init = true;
+          }
+      });
+  fetch('./extensions.html')
+      .then(response => response.text())
+      .then(html => { 
+          edit_section.appendChild(document.createRange().createContextualFragment(html));
+          var _button = document.getElementById("otelcol_extensions");
+          if(_button.init == null || _button.init == false) {
+              _button.addEventListener("click", (event) => {
+                  toggle_edit_section("extensions", event.currentTarget);
+              }, { passive: true});
+              _button.init = true;
+          }
+      });
+}
+
 function update_otelcol_status(config) {
   if(config) {
     var otelcol_html = "<li>";
@@ -54,6 +131,8 @@ function update_otelcol_status(config) {
         .catch(error => console.error('Error fetching otelcol config:', error));
     }
   }
+  // update edit section as well
+  update_edit_section(config);
 }
 
 function update_refinery_status(config) {

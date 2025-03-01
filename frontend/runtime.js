@@ -31,6 +31,10 @@ var otelcol_config_current = null;
 var refinery_config_current = null;
 var refinery_rule_current = null;
 
+// global variables for otelcol and refinery versions
+var otelcol_version = "0.0.0";
+var refinery_version = "0.0.0";
+
 // currently selected item from result.
 // if none, then -1
 var current_result = -1;
@@ -414,56 +418,8 @@ function toggle_edit_section(section, button) {
 var otel_modules = null;
 
 // initializes information about otel modules (receivers, processors, exporters, extensions)
-async function init_edit_section() {
-
-    // get the list of otel collector modules
-    const response = await fetch('/api/otelcol_modules');
-    otel_modules = await response.json();
-
-    var edit_section = document.getElementById("otelcol_edit_section");
-    // get four html files for receivers, processors, exporters, and extensions
-    fetch('./receivers.html')
-        .then(response => response.text())
-        .then(html => {
-            edit_section.appendChild(document.createRange().createContextualFragment(html));
-        });
-    fetch('./processors.html')
-        .then(response => response.text())
-        .then(html => {
-            edit_section.appendChild(document.createRange().createContextualFragment(html));
-        }); 
-    fetch('./exporters.html')
-        .then(response => response.text())
-        .then(html => {
-            edit_section.appendChild(document.createRange().createContextualFragment(html));
-        });
-    fetch('./connectors.html')
-        .then(response => response.text())
-        .then(html => {
-            edit_section.appendChild(document.createRange().createContextualFragment(html));
-        });
-    fetch('./extensions.html')
-        .then(response => response.text())
-        .then(html => { 
-            edit_section.appendChild(document.createRange().createContextualFragment(html));
-        });
-
-    // add actions for the buttons receivers, processors, exporters, and extensions
-    document.getElementById("otelcol_receivers").addEventListener("click", (event) => {
-        toggle_edit_section("receivers", event.currentTarget);
-    }, { passive: true});
-    document.getElementById("otelcol_processors").addEventListener("click", (event) => {
-        toggle_edit_section("processors", event.currentTarget);
-    }, { passive: true});
-    document.getElementById("otelcol_extensions").addEventListener("click", (event) => {
-        toggle_edit_section("extensions", event.currentTarget);
-    }, { passive: true});
-    document.getElementById("otelcol_exporters").addEventListener("click", (event) => {
-        toggle_edit_section("exporters", event.currentTarget);
-    }, { passive: true});
-    document.getElementById("otelcol_connectors").addEventListener("click", (event) => {
-        toggle_edit_section("connectors", event.currentTarget);
-    }, { passive: true});
+async function init_edit_section(config) {
+    update_edit_section(config);
 }
 
 /**
@@ -482,27 +438,26 @@ async function init_page() {
     } else {
         // initialize the websocket, template, and textareas
         var response = await fetch('/api/config');
-        var data = await response.json();
-        init_ws(data);
-        await init_edit_section();
+        var config = await response.json();
+        init_ws(config);
+        await init_edit_section(config);
         // if collector and refinery is not set, we need to fetch them.
         if (otel_collector == null || refinery == null) {
-            // fetch the config
             // fetch synchronously and catch error
             try {
-                otel_collector = data.otel_collector;
-                refinery = data.refinery;
-                work_dir = data.work_dir;
-                template_dir = data.template_dir;
-                collector_installed = data.collector_installed;
-                refinery_installed = data.refinery_installed;
+                otel_collector = config.otel_collector;
+                refinery = config.refinery;
+                work_dir = config.work_dir;
+                template_dir = config.template_dir;
+                collector_installed = config.collector_installed;
+                refinery_installed = config.refinery_installed;
 
                 init_template();
                 init_textareas();
 
                 if(collector_installed) {
                     document.getElementById("otelcol_install_status").innerText = "🟢 Installed";
-                    if (data.collector_config_exists) {
+                    if (config.collector_config_exists) {
                         fetch('/api/get_yaml?path=' + otel_collector.config_path)
                           .then(response => response.text())
                           .then(yaml => {
@@ -516,7 +471,7 @@ async function init_page() {
                 }
                 if(refinery_installed) {
                     document.getElementById("refinery_install_status").innerText = "🟢 Installed";
-                    if (data.refinery_config_exists) {
+                    if (config.refinery_config_exists) {
                         fetch('/api/get_yaml?path=' + refinery.config_path)
                           .then(response => response.text())
                           .then(yaml => {
@@ -524,7 +479,7 @@ async function init_page() {
                             refinery_editor.setValue(yaml);
                             refinery_config_current = yaml;
                             document.getElementById("refinery_save").disabled = true;
-                            if (data.refinery_rule_exists) {
+                            if (config.refinery_rule_exists) {
                               fetch('/api/get_yaml?path=' + refinery.rule_path)
                                 .then(response => response.text())
                                 .then(_yaml => {

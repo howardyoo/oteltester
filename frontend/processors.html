@@ -26,7 +26,11 @@
                     button.addEventListener("click", (event) => {
                         // load the processor detail to the right section.
                         const name = event.currentTarget.value;
-                        const url = `https://raw.githubusercontent.com/open-telemetry/opentelemetry-collector-contrib/refs/heads/main/processor/${name}/README.md`;
+                        var version = "heads/main";
+                        if(otelcol_version != null && otelcol_version != "0.0.0") {
+                            version = `tags/v${otelcol_version}`;
+                        }
+                        const url = `https://raw.githubusercontent.com/open-telemetry/opentelemetry-collector-contrib/refs/${version}/processor/${name}/README.md`;
                         const encoded_url = encodeURIComponent(url);
                         fetch(`/api/get_markdown?url=${encoded_url}&output=html`).then(response => {
                             response.text().then(text => {
