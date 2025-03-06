@@ -1,6 +1,6 @@
 version: 1.0.0
 collector_home: ./runtime
-collector_version: 0.118.0
+collector_version: 0.120.0
 refinery_home: ./runtime
 refinery_version: 2.9.2
 otel_collector:
@@ -26,3 +26,4 @@ refinery_rule_exists: true
 os.arch: arm64
 os.is64bit: true
 os.platform: darwin
+host_name: localhost:3000

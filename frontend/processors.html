@@ -1,6 +1,6 @@
 <div id="otelcol_processors_section" class="template-section-100" style="display: none;">
     <div class="edit-section">
-        <div class="template-section-50">
+        <div class="template-section">
             <div>
                 <h3>🧠 Processors</h3>
                 <div id="otelcol_processors_list" class="button-list"></div>
@@ -8,11 +8,15 @@
             <div class="info-outer-section">
                 <div id="otelcol_processor_info" class="info-section"></div>
             </div>
+            <div class="openai-section" id="otelcol_processor_openai_section">&nbsp;</div>
         </div>
     </div>
 </div>
 <script type="text/javascript">
     function init_processors() {
+        document.getElementById("otelcol_processor_openai_section").innerHTML = '';
+        document.getElementById("otelcol_processor_openai_section").appendChild(openai_chat_section("otelcol_processor_openai_section", "processor"));
+
         if (document.getElementById("otelcol_processors_section") == null) {
             setTimeout(init_processors, 100);
         } else {

@@ -192,7 +192,7 @@ body {
     margin: 3px;
   }
 
-.info-outer-section {
+.info-outer-section, .openai-section {
   border-left: 1px solid #ccc; padding-left: 10px;
 }
 
@@ -224,5 +224,41 @@ body {
 
 .info-section p {
   font-size: 1.0em;
+}
+
+.chat-message {
+  padding: 10px;
+  border-radius: 10px;
+  border: none;
+  margin: 5px;
+  font-size: 0.9em;
+  display: inline-block;
+  max-width: 90%;
+}
+
+.chat-message-user {
+  background-color: #1890ff;
+  color: white;
+  float: right;
+  clear: both;
+  text-align: right;
+  margin-right: 15px;
+}
+
+.chat-message-assistant {
+  background-color: #D0D0D0;
+  color: #51368d;
+  text-align: left;
+  float: left;
+  clear: both;
+}
+
+.chat-message-error {
+  background-color: #f5ea53;
+  border: 3px solid #808080;
+  color: #000000;
+  text-align: left;
+  float: left;
+  clear: both;
 }
 

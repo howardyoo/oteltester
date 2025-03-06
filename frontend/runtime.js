@@ -56,7 +56,6 @@ function init_refinery_out_ws(config) {
             }
             refinery_out_ws.onmessage = (event) => {
                 const message = event.data;
-                // console.log("refinery_out_ws: ", message);
                 // var textarea = document.getElementById("refinery_sample_result");
                 if(message !== "{{pong}}") {
                     // textarea.value += message;
@@ -66,7 +65,6 @@ function init_refinery_out_ws(config) {
                     refinery_sample_result.setValue(value);
                     refinery_sample_result.setCursor(refinery_sample_result.lineCount(), 0);
                 } else {
-                    console.log("refinery_out_ws: pong");
                     refinery_out_ws_ping = 0;
                 }
             };
@@ -160,8 +158,7 @@ function init_otelcol_out_ws(config) {
                             });
                     }
                 } else {
-                    console.log("otelcol_out_ws: pong");
-                        otelcol_out_ws_ping = 0;
+                    otelcol_out_ws_ping = 0;
                 }
             };
             otelcol_out_ws.onclose = () => {
@@ -199,12 +196,10 @@ function init_otelcol_stdout_ws(config) {
                     otelcol_output.setValue(value);
                     otelcol_output.setCursor(otelcol_output.lineCount(), 0);
                 } else {
-                    console.log("otelcol_stdout_ws: pong");
                     otelcol_stdout_ws_ping = 0;
                 }
             };
             otelcol_stdout_ws.onclose = () => {
-                console.log("otelcol_stdout_ws: Websocket connection closed.");
                 otelcol_stdout_ws = null;
                 otelcol_stdout_ws_ping = 0;
                 setTimeout(init_otelcol_stdout_ws(config), 1000);
@@ -238,12 +233,10 @@ function init_refinery_stdout_ws(config) {
                     refinery_output.setValue(value);
                     refinery_output.setCursor(refinery_output.lineCount(), 0);
                 } else {
-                    console.log("refinery_stdout_ws: pong");
                     refinery_stdout_ws_ping = 0;
                 }
             };
             refinery_stdout_ws.onclose = () => {
-                console.log("refinery_stdout_ws: Websocket connection closed.");
                 refinery_stdout_ws = null;
                 refinery_stdout_ws_ping = 0;
                 setTimeout(init_refinery_stdout_ws(config), 1000);
@@ -300,12 +293,10 @@ function init_otelcol_setup_ws(config) {
                     // console.log("otelcol_setup_ws: ", message);
                 } 
                 else {
-                    console.log("otelcol_setup_ws: pong");
                     otelcol_setup_ws_ping = 0;
                 }
             };
             otelcol_setup_ws.onclose = () => {
-                console.log("otelcol_setup_ws: Websocket connection closed.");
                 otelcol_setup_ws = null;
                 otelcol_setup_ws_ping = 0;
                 // try to reconnect
@@ -357,12 +348,10 @@ function init_refinery_setup_ws(config) {
                         // do nothing - maybe set some animtation sequence..?
                     }
                 } else {
-                    console.log("refinery_setup_ws: pong");
                     refinery_setup_ws_ping = 0;
                 }
             };
             refinery_setup_ws.onclose = () => {
-                console.log("refinery_setup_ws: Websocket connection closed.");
                 refinery_setup_ws = null;
                 refinery_setup_ws_ping = 0;
                 // try to reconnect
@@ -404,7 +393,8 @@ function toggle_edit_section(section, button) {
             button.value = "▾ " + button_value.substring(2);
             button.classList.add("active");
         }
-    } else {
+    } 
+    else {
         document.getElementById("otelcol_" + section + "_section").style.display = "flex";
         current_edit = section;
         var button_value = button.value;
@@ -419,6 +409,10 @@ var otel_modules = null;
 
 // initializes information about otel modules (receivers, processors, exporters, extensions)
 async function init_edit_section(config) {
+    if(current_edit) {
+        toggle_edit_section(current_edit, document.getElementById("otelcol_" + current_edit));
+        current_edit = null;
+    }
     update_edit_section(config);
 }
 
@@ -607,6 +601,51 @@ async function init_page() {
                     document.getElementById("refinery_install_cancel").style.display = "none";
                 });
         }, { passive: true});
+
+        /* ********** OpenAI ********** */
+
+        /**
+         * Initialize the openai which handles JSON input of OTEL data.
+         */
+        init_input_openai(config, "openai_4_input", "otel_input", [
+            {
+                "role": "system",
+                "content": `You are a helpful assistant that generates Opentelemetry JSON data. 
+                You are to output the JSON data only, nothing else. Do not include any other text or comments. enclose the JSON data in \`\`\` and \`\`\` tags.`
+            }
+        ],
+        (id_prefix)=>{
+            // prompt hook
+            var prompt = [];
+            if(id_prefix == "otel_input") {
+                // check the otelcol_json_input and if the input is not empty and has length, then add it to the prompt
+                var input = otelcol_json_input.getValue();
+                if(input && input.length > 0) {
+                    prompt.push({
+                        "role": "system",
+                        "content": `The following is the current JSON datato the otel collector. Use this as a base to generate the next JSON data: \`\`\`json|n${input}\`\`\``
+                    });
+                }
+            }
+            return prompt;
+        }, 
+        (id_prefix)=>{
+            if(id_prefix == "otel_input") {
+                // start hook
+                // currently do nothing. pass.
+            }
+        }, 
+        (id_prefix, domElement)=>{
+            if(id_prefix == "otel_input") {
+                // end hook
+                // extract the json text from the domElement
+                var jsonText = domElement.innerText.match(/```(json)?(.*)```/)[2];
+                // append the text to the otelcol_json_input
+                var jsonText = JSON.stringify(JSON.parse(jsonText), null, 2);
+                domElement.innerHTML = "<pre>" + jsonText + "</pre>";
+                otelcol_json_input.setValue(jsonText);
+            }
+        });
 
         // if both buttons are found, then we can register the event listeners
         if (document.getElementById("otelcol_start") != null && document.getElementById("refinery_start") != null) {
@@ -828,12 +867,14 @@ async function init_page() {
                 console.log("sending json to otel collector");
                 var otelcol_url = document.getElementById("otel_input_url").value;
                 var json_data = otelcol_json_input.getValue();
+                var new_ids = document.getElementById("otel_input_new_trace_span_id").checked;
+                var strip_time = document.getElementById("otel_input_strip_timestamps").checked;
 
                 // cache the json data to be appended
                 append_otel_input(json_data);
 
                 // apply template to the json_data right before sending
-                json_data = JSON.stringify(apply_template(JSON.parse(json_data)));
+                json_data = JSON.stringify(apply_template(JSON.parse(json_data), new_ids, strip_time));
                 var apikey = document.getElementById("otel_input_send_apikey").value;
 
                 fetch('/api/send_json?url=' + encodeURIComponent(otelcol_url), {
@@ -991,44 +1032,60 @@ function refresh_status() {
 }
 
 function refresh_websocket() {
-    console.log("pinging websocket");
-    if (refinery_out_ws_ping > 0) {
-        // meaning that ping was sent, but pong was not received.
-        // we may need to reconnect the websocket
-    }
-    else {
-        if(refinery_out_ws && refinery_out_ws.readyState == WebSocket.OPEN) {
-            console.log("pinging refinery_out_ws");
-            refinery_out_ws.send("ping");
-            refinery_out_ws_ping = 1;
-        }
-    }
+    fetch('/api/config')
+        .then(response => response.json())
+        .then(config => {
+            if (refinery_out_ws_ping > 0) {
+                // meaning that ping was sent, but pong was not received.
+                // we may need to reconnect the websocket
+            }
+            else {
+                if(refinery_out_ws && refinery_out_ws.readyState == WebSocket.OPEN) {
+                    refinery_out_ws_ping = 1;
+                    refinery_out_ws.send("ping");
+                }
+            }
+            if(otelcol_out_ws && otelcol_out_ws.readyState == WebSocket.OPEN) {
+                otelcol_out_ws_ping = 1;
+                otelcol_out_ws.send("ping");
+            }
+            if(otelcol_stdout_ws && otelcol_stdout_ws.readyState == WebSocket.OPEN) {
+                otelcol_stdout_ws_ping = 1;
+                otelcol_stdout_ws.send("ping");
+            }
+            if(refinery_stdout_ws && refinery_stdout_ws.readyState == WebSocket.OPEN) {
+                refinery_stdout_ws_ping = 1;
+                refinery_stdout_ws.send("ping");
+            }
+            if(otelcol_setup_ws && otelcol_setup_ws.readyState == WebSocket.OPEN) {
+                otelcol_setup_ws_ping = 1;
+                otelcol_setup_ws.send("ping");
+            }
+            if(refinery_setup_ws && refinery_setup_ws.readyState == WebSocket.OPEN) {
+                refinery_setup_ws_ping = 1;
+                refinery_setup_ws.send("ping");
+            }
+        
+            // refresh websocket for ai assistants
+            if(ai_assistant_ws) {
+                for(var key in ai_assistant_ws) {
+                    if(ai_assistant_ws[key] && ai_assistant_ws[key].readyState == WebSocket.OPEN) {
+                        if (ai_assistant_ws_ping[key] == 1) {
+                            ai_assistant_ws_ping[key] = 0;
+                            // something is not right, reset the ws
+                            console.log("resetting ai assistant ws for " + key);
+                            var _ws = new WebSocket(`ws://${config.host_name}/ai_assistant?id_prefix=${key}`);
+                            ai_assistant_ws[key] = _ws;
+                        } else {
+                            ai_assistant_ws_ping[key] = 1;
+                            console.log("sending ping to ai assistant ws for " + key);
+                            ai_assistant_ws[key].send("ping");
+                        }
+                    }
+                }
+            }
+        });
 
-    if(otelcol_out_ws && otelcol_out_ws.readyState == WebSocket.OPEN) {
-        console.log("pinging otelcol_out_ws");
-        otelcol_out_ws.send("ping");
-        otelcol_out_ws_ping = 1;
-    }
-    if(otelcol_stdout_ws && otelcol_stdout_ws.readyState == WebSocket.OPEN) {
-        console.log("pinging otelcol_stdout_ws");
-        otelcol_stdout_ws.send("ping");
-        otelcol_stdout_ws_ping = 1;
-    }
-    if(refinery_stdout_ws && refinery_stdout_ws.readyState == WebSocket.OPEN) {
-        console.log("pinging refinery_stdout_ws");
-        refinery_stdout_ws.send("ping");
-        refinery_stdout_ws_ping = 1;
-    }
-    if(otelcol_setup_ws && otelcol_setup_ws.readyState == WebSocket.OPEN) {
-        console.log("pinging otelcol_setup_ws");
-        otelcol_setup_ws.send("ping");
-        otelcol_setup_ws_ping = 1;
-    }
-    if(refinery_setup_ws && refinery_setup_ws.readyState == WebSocket.OPEN) {
-        console.log("pinging refinery_setup_ws");
-        refinery_setup_ws.send("ping");
-        refinery_setup_ws_ping = 1;
-    }
     // loop every 60 seconds
     setTimeout(refresh_websocket, WEBSOCKET_REFERSH_INTERVAL);
 }

@@ -13,6 +13,11 @@ import { decode, decodeMulti, decodeStream, decodeMultiStream} from "@msgpack/ms
 import compression from "compression";
 import zstd from "fast-zstd";
 import { marked } from "marked";
+import dotenvFlow from "dotenv-flow";
+import { OpenAI } from "openai";
+
+// load the environment variables (automatically loads .env.local, .env, and .env.development)
+dotenvFlow.config();
 
 const app = express();
 const PORT = 3000;
@@ -44,6 +49,23 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "../frontend/index.html"));
 });
 
+var openai = null;
+if(process.env.OPENAI_API_KEY) {
+  console.log("🔑 OPENAI_API_KEY is set.");
+  openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
+  console.log("🧠 openai is set and ready.");
+  if(ai_assistant_ws) {
+    for(var key in ai_assistant_ws) {
+      if(ai_assistant_ws[key]) {
+        ai_assistant_ws[key].close();
+        ai_assistant_ws[key] = null;
+      }
+    }
+  }
+}
+
 // create http server for express app
 const server = http.createServer(app);
 
@@ -58,20 +80,20 @@ const wsRefineryServer = new WebSocketServer({ noServer: true });
 
 // handle websocket connections
 wsRefineryServer.on("connection", (ws, req) => {
-  console.log("A new ws client connected - refinery server output");
+  // console.log("A new ws client connected - refinery server output");
   refinery_out_ws = ws;
   // on message
   ws.on("message", (message) => {
     // do not do anything - we're not going to process the message
     if (message.toString() === "ping") {
-      console.log("refinery_out_ws: pong");
+      //console.log("refinery_out_ws: pong");
       ws.send("{{pong}}");
     }
   });
 
   // on close
   ws.on("close", () => {
-    console.log("wsRefineryServer: Websocket client disconnected.");
+    // console.log("wsRefineryServer: Websocket client disconnected.");
     refinery_out_ws = null;
   });
 });
@@ -82,19 +104,19 @@ let otelcol_out_ws = null;
 const wsOtelcolServer = new WebSocketServer({ noServer: true });
 // handle websocket connections
 wsOtelcolServer.on("connection", (ws, req) => {
-  console.log("A new ws client connected - otelcol server output");
+  // console.log("A new ws client connected - otelcol server output");
   otelcol_out_ws = ws;
   // on message
   ws.on("message", (message) => {
     if (message.toString() === "ping") {
-      console.log("otelcol_out_ws: pong");
+      //console.log("otelcol_out_ws: pong");
       ws.send("{{pong}}");
     }
   });
 
   // on close
   ws.on("close", () => {
-    console.log("wsOtelcolServer: Websocket client disconnected.");
+    //console.log("wsOtelcolServer: Websocket client disconnected.");
     otelcol_out_ws = null;
   });
 });
@@ -104,19 +126,19 @@ let otelcol_stdout_ws = null;
 const wsOtelcolStdoutServer = new WebSocketServer({ noServer: true });
 // handle websocket connections
 wsOtelcolStdoutServer.on("connection", (ws, req) => {
-  console.log("A new ws client connected - otelcol stdoutput");
+  // console.log("A new ws client connected - otelcol stdoutput");
   otelcol_stdout_ws = ws;
   // on message
   ws.on("message", (message) => {
     if (message.toString() === "ping") {
-      console.log("otelcol_stdout_ws: pong");
+      // console.log("otelcol_stdout_ws: pong");
       ws.send("{{pong}}");
     }
   });
 
   // on close
   ws.on("close", () => {
-    console.log("wsOtelcolStdoutServer: Websocket client disconnected.");
+    //console.log("wsOtelcolStdoutServer: Websocket client disconnected.");
     otelcol_stdout_ws = null;
   });
 });
@@ -126,19 +148,19 @@ let refinery_stdout_ws = null;
 const wsRefineryStdoutServer = new WebSocketServer({ noServer: true });
 // handle websocket connections
 wsRefineryStdoutServer.on("connection", (ws, req) => {
-  console.log("A new ws client connected - refinery stdoutput");
+  // console.log("A new ws client connected - refinery stdoutput");
   refinery_stdout_ws = ws;
   // on message
   ws.on("message", (message) => {
     if (message.toString() === "ping") {
-      console.log("refinery_stdout_ws: pong");
+      //console.log("refinery_stdout_ws: pong");
       ws.send("{{pong}}");
     }
   });
 
   // on close
   ws.on("close", () => {
-    console.log("wsRefineryStdoutServer: Websocket client disconnected.");
+    //console.log("wsRefineryStdoutServer: Websocket client disconnected.");
     refinery_stdout_ws = null;
   });
 });
@@ -147,13 +169,13 @@ wsRefineryStdoutServer.on("connection", (ws, req) => {
 let otelcol_setup_ws = null;
 const wsOtelcolSetupServer = new WebSocketServer({ noServer: true });
 wsOtelcolSetupServer.on("connection", (ws, req) => {
-  console.log("A new ws client connected - otelcol setup");
+  // console.log("A new ws client connected - otelcol setup");
   otelcol_setup_ws = ws;
   // on message
   ws.on("message", (message) => {
-    console.log("otelcol_setup_ws: message received");
+    // console.log("otelcol_setup_ws: message received");
     if(message.toString() === "ping") {
-      console.log("otelcol_setup_ws: pong");
+      //console.log("otelcol_setup_ws: pong");
       ws.send("{{pong}}");
     }
   });
@@ -163,13 +185,13 @@ wsOtelcolSetupServer.on("connection", (ws, req) => {
 let refinery_setup_ws = null;
 const wsRefinerySetupServer = new WebSocketServer({ noServer: true });
 wsRefinerySetupServer.on("connection", (ws, req) => {
-  console.log("A new ws client connected - refinery setup");
+  // console.log("A new ws client connected - refinery setup");
   refinery_setup_ws = ws;
   // on message
   ws.on("message", (message) => {
-    console.log("refinery_setup_ws: message received");
+    // console.log("refinery_setup_ws: message received");
     if(message.toString() === "ping") {
-      console.log("refinery_setup_ws: pong");
+      // console.log("refinery_setup_ws: pong");
       ws.send("{{pong}}");
     }
   });
@@ -177,6 +199,9 @@ wsRefinerySetupServer.on("connection", (ws, req) => {
 
 // create websocket server
 const wss = new WebSocketServer({ noServer: true });
+
+// map of web sockets for ai assistant
+var ai_assistant_ws = {};
 
 // routing for websocket upgrade
 server.on("upgrade", (request, socket, head) => {
@@ -209,10 +234,98 @@ server.on("upgrade", (request, socket, head) => {
     wsRefinerySetupServer.handleUpgrade(request, socket, head, (ws) => {
       wsRefinerySetupServer.emit("connection", ws, request);
     });
-  } else {
+  } else if ( url.startsWith("/ai_assistant") ) {
+    // need to parse the url to get the id_prefix
+    if(request.url.includes("?")) {
+      var id_prefix = request.url.split("?")[1].split("=")[1];
+    } else {
+      var id_prefix = null;
+    }
+    if(id_prefix) {
+      const _wss = new WebSocketServer({ noServer: true });
+      _wss.on("connection", (ws, req) => {
+        console.log("ai assistant ws for " + id_prefix + " connected.");
+        ai_assistant_ws[id_prefix] = ws;
+        // on message
+        ws.on("message", (message) => {
+          if (message.toString() === "ping") {
+            console.log("ai assistant ws for " + id_prefix + " received ping.");
+            ai_assistant_ws[id_prefix].send("{{pong}}");
+            // ws.send("{{pong}}");
+          } else {
+            /**
+             * non-pong message is JSON array of messages
+             * which looks like the following:
+             * [
+             *  {
+             *    "role": "system",
+             *    "content": "You are a helpful assistant."
+             *  },
+             *  {
+             *    "role": "user",
+             *    "content": "Hello, how are you?"
+             *  }
+             * ]
+             */
+            var messages = JSON.parse(message.toString());
+            console.log("ai assistant ws for " + id_prefix + " received messages: " + JSON.stringify(messages));
+            ai_assistant_send_message(ai_assistant_ws[id_prefix], messages);
+          }
+        });
+      
+        // on close
+        ws.on("close", () => {
+          console.log("ai assistant ws for " + id_prefix + " closed.");
+          ai_assistant_ws[id_prefix] = null;
+        });
+
+        ws.on("error", (err) => {
+          console.log("ai assistant ws for " + id_prefix + " error: " + err.message);
+          ai_assistant_ws[id_prefix] = null;
+        });
+      });
+
+      _wss.handleUpgrade(request, socket, head, (ws) => {
+        _wss.emit("connection", ws, request);
+      });
+    }
+  } 
+  else {
     socket.destroy();
   }
 });
+
+/**
+ * utilize the openai api to send the message to the ai assistant
+ * @param {*} id_prefix 
+ * @param {*} messages 
+ */
+async function ai_assistant_send_message(ws, messages) {
+  if(ws) {
+    try {
+      const stream = await openai.chat.completions.create({
+        // this should change depending on the model (e.g. gpt-4o, gpt-4o-mini, etc.)
+        // model: "gpt-4o",
+        model: "gpt-4o-mini",
+        messages: messages,
+        stream: true
+      });
+      ws.send("{{start}}");
+      for await (const chunk of stream) {
+        const text = chunk.choices[0]?.delta?.content || "";
+        console.log("text> " + text);
+        ws.send(text);
+      }
+      // send the complete signal
+      ws.send("{{end}}");
+    } catch (err) {
+      console.log(err.message);
+      ws.send("{{errorstart}}")
+      ws.send("An error occurred while generating the response.");
+      ws.send("{{errorend}}")
+    }
+  }
+}
 
 // start the otelcol process
 app.get("/api/otelcol_start", (req, res) => {
@@ -340,6 +453,15 @@ app.get("/api/get_markdown", (req, res) => {
   } catch (err) {
     console.log(err.message);
     res.status(500).send({result: false, message: "Failed to get markdown", error: err.toString()});
+  }
+});
+
+// check if the ai assistant is enabled
+app.get("/api/ai_assistant", (req, res) => {
+  if (openai) {
+    res.json({result: true, type: "openai", message: "ai assistant is enabled"});
+  } else {
+    res.json({result: false, type: "openai", message: "ai assistant is disabled"});
   }
 });
 

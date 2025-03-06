@@ -7,3 +7,7 @@ runtime/README.md
 runtime/refinery
 runtime/refinery-config.yml
 runtime/refinery-rule.yml
+.env.development
+.env.local
+.env.production
+.env.test

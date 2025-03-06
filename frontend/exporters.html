@@ -1,6 +1,6 @@
 <div id="otelcol_exporters_section" class="template-section-100" style="display: none;">
     <div class="edit-section">
-        <div class="template-section-50">
+        <div class="template-section">
             <div>
                 <h3>🚀 Exporters</h3>
                 <div id="otelcol_exporters_list" class="button-list"></div>
@@ -8,11 +8,15 @@
             <div class="info-outer-section">
                 <div id="otelcol_exporter_info" class="info-section"></div>
             </div>
+            <div class="openai-section" id="otelcol_exporter_openai_section">&nbsp;</div>
         </div>
     </div>
 </div>
 <script type="text/javascript">
     function init_exporters() {
+        document.getElementById("otelcol_exporter_openai_section").innerHTML = '';
+        document.getElementById("otelcol_exporter_openai_section").appendChild(openai_chat_section("otelcol_exporter_openai_section", "exporter"));
+
         if (document.getElementById("otelcol_exporters_section") == null) {
             setTimeout(init_exporters, 100);
         } else {

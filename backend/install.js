@@ -151,7 +151,7 @@ export function install_refinery(ws,version) {
     // if cancel is received, cancel the installation
     ws.on("message", (message) => {
         if(message == "{{cancel}}") {
-            console.log("refinery_setup_ws: installation cancelled");
+            // console.log("refinery_setup_ws: installation cancelled");
             // cancel the installation
             ws.send(JSON.stringify({html: "🔴 Cancelled", status: "cancelled"}));
             cancel = true;

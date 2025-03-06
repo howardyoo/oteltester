@@ -1,6 +1,6 @@
 <div id="otelcol_receivers_section" class="template-section-100" style="display: none;">
     <div class="edit-section">
-        <div class="template-section-50">
+        <div class="template-section">
             <div>
                 <h3>🤲🏻 Receivers</h3>
                 <div id="otelcol_receivers_list" class="button-list"></div>
@@ -8,11 +8,15 @@
             <div class="info-outer-section">
                 <div id="otelcol_receiver_info" class="info-section"></div>
             </div>
+            <div class="openai-section" id="otelcol_receiver_openai_section">&nbsp;</div>
         </div>
     </div>
 </div>
 <script type="text/javascript">
     function init_receivers() {
+        document.getElementById("otelcol_receiver_openai_section").innerHTML = '';
+        document.getElementById("otelcol_receiver_openai_section").appendChild(openai_chat_section("otelcol_receiver_openai_section", "receiver"));
+
         if (document.getElementById("otelcol_receivers_section") == null) {
             setTimeout(init_receivers, 100);
         } else {

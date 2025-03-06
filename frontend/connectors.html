@@ -8,11 +8,15 @@
             <div class="info-outer-section">
                 <div id="otelcol_connector_info" class="info-section"></div>
             </div>
+            <div class="openai-section" id="otelcol_connector_openai_section">&nbsp;</div>
         </div>
     </div>
 </div>
 <script type="text/javascript">
     function init_connectors() {
+        document.getElementById("otelcol_connector_openai_section").innerHTML = '';
+        document.getElementById("otelcol_connector_openai_section").appendChild(openai_chat_section("otelcol_connector_openai_section", "connector"));
+
         if (document.getElementById("otelcol_connectors_section") == null) {
             setTimeout(init_connectors, 100);
         } else {

@@ -133,6 +133,8 @@ function update_otelcol_status(config) {
   }
   // update edit section as well
   update_edit_section(config);
+  // update the
+  init_edit_section(config);
 }
 
 function update_refinery_status(config) {
