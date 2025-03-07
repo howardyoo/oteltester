@@ -303,10 +303,11 @@ server.on("upgrade", (request, socket, head) => {
 async function ai_assistant_send_message(ws, messages) {
   if(ws) {
     try {
+      var model = process.env.OPENAI_MODEL || "gpt-4o-mini";
       const stream = await openai.chat.completions.create({
         // this should change depending on the model (e.g. gpt-4o, gpt-4o-mini, etc.)
         // model: "gpt-4o",
-        model: "gpt-4o-mini",
+        model: model,
         messages: messages,
         stream: true
       });
