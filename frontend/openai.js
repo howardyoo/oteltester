@@ -3,8 +3,9 @@ function reset_ai_assistant_ws(id_prefix) {
     fetch("/api/config")
         .then(response => response.json())
         .then(config => {
-            var _ws = new WebSocket(`ws://${config.host_name}/ai_assistant?id_prefix=${id_prefix}`);
-            ai_assistant_ws[id_prefix] = _ws;
+            var ws_url = (config.host_name.includes("localhost")) ? "ws" : "wss";
+            var _ws = new WebSocket(`${ws_url}://${config.host_name}/ai_assistant?id_prefix=${id_prefix}`);
+            init_input_openai_ws(config, id_prefix, _ws);
             ai_assistant_ws_ping[id_prefix] = 0;
         });
 }
@@ -47,7 +48,7 @@ function input_openai_send(id_prefix) {
 }
 
 // function to create the openai chat section
-function openai_chat_section(id_prefix) {
+function openai_chat_section(id_prefix, parent) {
     // Create main section container
     const section = document.createElement('div');
     section.id = `${id_prefix}_openai_section`;
@@ -62,7 +63,21 @@ function openai_chat_section(id_prefix) {
     content.id = `${id_prefix}_openai_content`;
     content.style.display = 'flex';
     content.style.flexDirection = 'column';
-    content.style.maxHeight = '300px';
+    if(parent) {
+        console.log("parent height: " + parent.clientHeight);
+        if(parent.clientHeight > 0) {
+            // subtract 100px from the height to account for the header and input container
+            content.style.maxHeight = parent.clientHeight - 100 + "px";
+        } else if(parent.style.maxHeight) {
+            // subtract 100px from the height to account for the header and input container
+            // get the height from the style.maxHeight
+            content.style.maxHeight = (parent.style.maxHeight.replace("px", "") - 100) + "px";
+            console.log("content max height: " + content.style.maxHeight);
+        } else {
+            // by default, set the max height to 300px
+            content.style.maxHeight = "300px";
+        }
+    }
     content.style.overflowY = 'auto';
     // don't allow horizontal scrolling - and break long lines
     content.style.overflowX = 'hidden';
@@ -144,101 +159,122 @@ var ai_assistant_prompt = {};
 var ai_assistant_hooks = {};
 var ai_assistant_ws_ping = {};
 
-function init_input_openai(config, id_target, id_prefix, prompt = [], prompt_hook = null, start_hook = null, end_hook = null) {
-    // check if the ai assistant is enabled
-    fetch("/api/ai_assistant")
-        .then(response => response.json())
-        .then(data => {
-            const target = document.getElementById(id_target);
-            if (target) {
-                if (data.result) {
-                    if (target) {
-                        target.innerHTML = '';
-                        target.appendChild(openai_chat_section(id_prefix));
-                        ai_assistant_enabled = true;
-                        ai_assistant_type = data.type;
-                        // also setup the websocket
-                        const ws = new WebSocket(`ws://${config.host_name}/ai_assistant?id_prefix=${id_prefix}`);
-
-                        ai_assistant_ws[id_prefix] = ws;
-
-                        // setup the system prompt and hooks
-                        if (prompt.length > 0) {
-                            ai_assistant_prompt[id_prefix] = prompt;
-                        }
-                        if (start_hook) {
-                            ai_assistant_hooks[id_prefix + "_start"] = start_hook;
-                        }
-                        if (end_hook) {
-                            ai_assistant_hooks[id_prefix + "_end"] = end_hook;
-                        }
-                        if (prompt_hook) {
-                            ai_assistant_hooks[id_prefix + "_prompt"] = prompt_hook;
-                        }
-
-                        ws.onmessage = (event) => {
-                            var message = event.data;
-                            const chatMessages = document.getElementById(`${id_prefix}_openai_chat_messages`);
-                            if(message === "{{pong}}") {
-                                // dummy pong to keep the connection alive 
-                                ai_assistant_ws_ping[id_prefix] = 0;
-                            }
-                            else if(message === "{{end}}") {
-                                // format the markdown into html
-                                if (ai_assistant_hooks[id_prefix + "_end"]) {
-                                    ai_assistant_hooks[id_prefix + "_end"](id_prefix, chatMessages.lastChild);
-                                } else {
-                                    chatMessages.lastChild.innerHTML = chatMessages.lastChild.innerText;
-                                }
-                            }
-                            else if(message === "{{start}}") {
-                                const _div = document.createElement('div');
-                                _div.classList.add("chat-message");
-                                _div.classList.add("chat-message-assistant-content");
-                                chatMessages.appendChild(_div);
-                                if (ai_assistant_hooks[id_prefix + "_start"]) {
-                                    ai_assistant_hooks[id_prefix + "_start"](id_prefix);
-                                }
-                            }
-                            else if(message === "{{errorstart}}") {
-                                const _div = document.createElement('div');
-                                _div.classList.add("chat-message");
-                                _div.classList.add("chat-message-error");
-                                chatMessages.appendChild(_div);
-                                chatMessages.lastChild.appendChild(document.createTextNode("⚠️ "));
-                            }
-                            else if(message === "{{errorend}}") {
-                                // don't do anything
-                            }
-                            else {
-                                // add the message to the chat
-                                // replace \n with <br/>
-                                // message = message.replace(/\n/g, "<br/>");
-                                chatMessages.lastChild.appendChild(document.createTextNode(message));
-                                chatMessages.scrollTop = chatMessages.scrollHeight;
-                            }
-                        }
-
-                        ws.onclose = () => {
-                            setTimeout(() => {
-                                var _ws = new WebSocket(`ws://${config.host_name}/ai_assistant?id_prefix=${id_prefix}`);
-                                ai_assistant_ws[id_prefix] = _ws;
-                            }, 1000);
-                        }
-
-                        ws.onerror = () => {
-                            setTimeout(() => {
-                                var _ws = new WebSocket(`ws://${config.host_name}/ai_assistant?id_prefix=${id_prefix}`);
-                                ai_assistant_ws[id_prefix] = _ws;
-                            }, 1000);
-                        }
-                    }
-                } else {
-                    target.style.display = "none";
+// function to initialize the openai ws to handle messages
+function init_input_openai_ws(config, id_prefix, ws) {
+    var ws_url = (config.host_name.includes("localhost")) ? "ws" : "wss";
+    if(config && id_prefix && ws) {
+        ai_assistant_ws[id_prefix] = ws;
+        ws.onmessage = (event) => {
+            var message = event.data;
+            const chatMessages = document.getElementById(`${id_prefix}_openai_chat_messages`);
+            if(message === "{{pong}}") {
+                // dummy pong to keep the connection alive 
+                ai_assistant_ws_ping[id_prefix] = 0;
+            }
+            else if(message === "{{end}}") {
+                // format the markdown into html
+                if (ai_assistant_hooks[id_prefix + "_end"]) {
+                    ai_assistant_hooks[id_prefix + "_end"](id_prefix, chatMessages.lastChild);
                 }
             }
-        })
-        .catch(error => {
-            console.error("Error fetching AI assistant status:", error);
+            else if(message === "{{start}}") {
+                const _div = document.createElement('div');
+                _div.classList.add("chat-message");
+                _div.classList.add("chat-message-assistant");
+                const pre = document.createElement('pre');
+                _div.appendChild(pre);
+                chatMessages.appendChild(_div);
+                if (ai_assistant_hooks[id_prefix + "_start"]) {
+                    ai_assistant_hooks[id_prefix + "_start"](id_prefix);
+                }
+                chatMessages.responseText = "";
+            }
+            else if(message === "{{errorstart}}") {
+                const _div = document.createElement('div');
+                _div.classList.add("chat-message");
+                _div.classList.add("chat-message-error");
+                chatMessages.appendChild(_div);
+                chatMessages.lastChild.appendChild(document.createTextNode("⚠️ "));
+            }
+            else if(message === "{{errorend}}") {
+                // don't do anything
+            }
+            else {
+                chatMessages.responseText += message;
+                chatMessages.lastChild.lastChild.appendChild(document.createTextNode(message));
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+        }
+
+        ws.onclose = () => {
+            setTimeout(() => {
+                var _ws = new WebSocket(`${ws_url}://${config.host_name}/ai_assistant?id_prefix=${id_prefix}`);
+                init_input_openai_ws(config, id_prefix, _ws);
+            }, 1000);
+        }
+
+        ws.onerror = () => {
+            setTimeout(() => {
+                var _ws = new WebSocket(`${ws_url}://${config.host_name}/ai_assistant?id_prefix=${id_prefix}`);
+                init_input_openai_ws(config, id_prefix, _ws);
+            }, 1000);
+        }
+    }
+}
+
+/**
+ * function to initialize the openai assistant's behavior.
+ * without calling this function, the openai assistant will not be able to run.
+ * @param {*} config 
+ * @param {*} id_target 
+ * @param {*} id_prefix 
+ * @param {*} prompt 
+ * @param {*} prompt_hook 
+ * @param {*} start_hook 
+ * @param {*} end_hook 
+ */
+function init_input_openai(id_target, id_prefix, prompt = [], prompt_hook = null, start_hook = null, end_hook = null) {
+    fetch("/api/config")
+        .then(response => response.json())
+        .then(config => {
+            var ws_url = (config.host_name.includes("localhost")) ? "ws" : "wss";
+            // check if the ai assistant is enabled
+            fetch("/api/ai_assistant")
+                .then(response => response.json())
+                .then(data => {
+                    const target = document.getElementById(id_target);
+                    if (target) {
+                        if (data.result) {
+                            if (target) {
+                                target.innerHTML = '';
+                                target.appendChild(openai_chat_section(id_prefix, target));
+                                ai_assistant_enabled = true;
+                                ai_assistant_type = data.type;
+                                // also setup the websocket
+                                const ws = new WebSocket(`${ws_url}://${config.host_name}/ai_assistant?id_prefix=${id_prefix}`);
+
+                                // setup the system prompt and hooks
+                                if (prompt.length > 0) {
+                                    ai_assistant_prompt[id_prefix] = prompt;
+                                }
+                                if (start_hook) {
+                                    ai_assistant_hooks[id_prefix + "_start"] = start_hook;
+                                }
+                                if (end_hook) {
+                                    ai_assistant_hooks[id_prefix + "_end"] = end_hook;
+                                }
+                                if (prompt_hook) {
+                                    ai_assistant_hooks[id_prefix + "_prompt"] = prompt_hook;
+                                }
+                                init_input_openai_ws(config, id_prefix, ws);
+                            }
+                        } else {
+                            target.style.display = "none";
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error("Error fetching AI assistant status:", error);
+                });
         });
 }

@@ -268,7 +268,7 @@ server.on("upgrade", (request, socket, head) => {
              * ]
              */
             var messages = JSON.parse(message.toString());
-            console.log("ai assistant ws for " + id_prefix + " received messages: " + JSON.stringify(messages));
+            // console.log("ai assistant ws for " + id_prefix + " received messages: " + JSON.stringify(messages));
             ai_assistant_send_message(ai_assistant_ws[id_prefix], messages);
           }
         });
@@ -313,7 +313,7 @@ async function ai_assistant_send_message(ws, messages) {
       ws.send("{{start}}");
       for await (const chunk of stream) {
         const text = chunk.choices[0]?.delta?.content || "";
-        console.log("text> " + text);
+        // console.log("text> " + text);
         ws.send(text);
       }
       // send the complete signal

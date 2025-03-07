@@ -79,7 +79,7 @@ function apply_trace_template(json, new_ids = false, strip_time = false) {
         if (spans_with_time.length > 0) {
             // sort the spans by startTimeUnixNano
             spans_with_time.sort((a, b) => {
-                return BigInt(a.endTimeUnixNano) - BigInt(b.endTimeUnixNano);
+                return Number(a.endTimeUnixNano) - Number(b.endTimeUnixNano);
             });
             // get the largest startTimeUnixNano
             const largest_time = BigInt(spans_with_time[spans_with_time.length - 1].endTimeUnixNano);
@@ -144,7 +144,7 @@ function apply_log_template(json, new_ids = false, strip_time = false) {
         if (logs_with_time.length > 0) {
             // sort the logs by timeUnixNano
             logs_with_time.sort((a, b) => {
-                return BigInt(a.timeUnixNano) - BigInt(b.timeUnixNano);
+                return Number(a.timeUnixNano) - Number(b.timeUnixNano);
             });
             // get the largest timeUnixNano
             const largest_time = BigInt(logs_with_time[logs_with_time.length - 1].timeUnixNano);
@@ -206,7 +206,7 @@ function apply_metric_template(json, new_ids = false, strip_time = false) {
         if (datapoints_with_time.length > 0) {
             // sort the datapoints by timeUnixNano
             datapoints_with_time.sort((a, b) => {
-                return BigInt(a.timeUnixNano) - BigInt(b.timeUnixNano);
+                return Number(a.timeUnixNano) - Number(b.timeUnixNano);
             });
             // get the largest timeUnixNano
             const largest_time = BigInt(datapoints_with_time[datapoints_with_time.length - 1].timeUnixNano);

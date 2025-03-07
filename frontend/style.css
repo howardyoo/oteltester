@@ -196,14 +196,23 @@ body {
   border-left: 1px solid #ccc; padding-left: 10px;
 }
 
+.info-outer-section {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden auto;
+  word-break: break-word;
+}
+
 .info-section {
-  font-size: 1.0em;
+  font-size: 0.9em;
   font-family: Arial, Helvetica, sans-serif;
-  overflow-y: auto;
-  min-height: 100px;
-  max-height: 500px;
   white-space: pre-wrap;
   font-weight: normal;
+  flex-grow: 1;
+  overflow-y: auto;
+  padding-bottom: 10px;
+  min-height: 250px;
+  max-height: 500px;
 }
 
 .info-section h1 {
@@ -242,15 +251,19 @@ body {
   float: right;
   clear: both;
   text-align: right;
+  font-size: 0.9em;
+  font-weight: normal;
   margin-right: 15px;
 }
 
 .chat-message-assistant {
-  background-color: #D0D0D0;
-  color: #51368d;
+  background-color: #E0E0E0;
+  color: #808080;
   text-align: left;
   float: left;
   clear: both;
+  font-size: 0.9em;
+  font-weight: normal;
 }
 
 .chat-message-error {
@@ -260,5 +273,14 @@ body {
   text-align: left;
   float: left;
   clear: both;
+  font-size: 0.9em;
+  font-weight: normal;
 }
 
+pre {
+  white-space: pre-wrap;       /* Since CSS 2.1 */
+  white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
+  white-space: -pre-wrap;      /* Opera 4-6 */
+  white-space: -o-pre-wrap;    /* Opera 7 */
+  word-wrap: break-word;       /* Internet Explorer 5.5+ */
+}

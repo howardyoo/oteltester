@@ -3,19 +3,18 @@
         <div class="template-section">
             <div>
                 <h3>🤲🏻 Receivers</h3>
-                <div id="otelcol_receivers_list" class="button-list"></div>
+                <div id="otelcol_receivers_list" class="button-list" style="max-height: 500px; overflow-y: auto;"></div>
             </div>
             <div class="info-outer-section">
                 <div id="otelcol_receiver_info" class="info-section"></div>
             </div>
-            <div class="openai-section" id="otelcol_receiver_openai_section">&nbsp;</div>
+            <div class="openai-section" id="otelcol_receiver_openai_section" style="max-height: 500px;">&nbsp;</div>
         </div>
     </div>
 </div>
 <script type="text/javascript">
     function init_receivers() {
         document.getElementById("otelcol_receiver_openai_section").innerHTML = '';
-        document.getElementById("otelcol_receiver_openai_section").appendChild(openai_chat_section("otelcol_receiver_openai_section", "receiver"));
 
         if (document.getElementById("otelcol_receivers_section") == null) {
             setTimeout(init_receivers, 100);
@@ -45,6 +44,54 @@
                     document.getElementById("otelcol_receivers_list").appendChild(button);
                 }
             }
+            var section_name = "receiver";
+            /**
+             * init part
+             */
+             init_input_openai(`otelcol_${section_name}_openai_section`, section_name, [
+            {
+                "role": "system",
+                "content": `You are a helpful assistant that generates OpenTelemetry Collector configuration. 
+                You will be given the current configuration and you will need to generate the next configuration.
+                You are to output the YAML data only, nothing else. Do not include any other text or comments. enclose the YAML data in \`\`\` and \`\`\` tags.`
+            }
+            ],
+            (id_prefix)=>{
+                // prompt hook
+                var prompt = [];
+                if(id_prefix == section_name) {
+                    var currentConfig = otelcol_editor.getValue();
+                    // check the otelcol_json_input and if the input is not empty and has length, then add it to the prompt
+                    var infoHTML = document.getElementById(`otelcol_${section_name}_info`).innerHTML;
+                    var inputMD = turndownService.turndown(infoHTML);
+                    if(inputMD && inputMD.length > 0) {
+                        prompt.push({
+                            "role": "system",
+                            "content": `The following is the current YAML configuration for the OpenTelemetry Collector: \`\`\`yaml|n${currentConfig}\`\`\``
+                        });
+                    }
+                    if(currentConfig && currentConfig.length > 0) {
+                        prompt.push({
+                            "role": "system",
+                            "content": `You are to use the following receiver to help you to generate the next configuration: \`\`\`markdown|n${inputMD}\`\`\``
+                        });
+                    }
+                }
+                return prompt;
+            }, 
+            (id_prefix)=>{
+                if(id_prefix == section_name) {
+                    // start hook
+                    // currently do nothing. pass.
+                }
+            }, 
+            (id_prefix, domElement)=>{
+                if(id_prefix == section_name) {
+                    // end hook
+                    // for now, simply set to the given domElement.
+                    // domElement.innerHTML = "<pre>" + domeElement.innerText + "</pre>";
+                }
+            });
         }
     }
     init_receivers();

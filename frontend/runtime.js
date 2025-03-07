@@ -44,6 +44,9 @@ var current_input = -1;
 // currently selected item from edit section
 var current_edit = null;
 
+// turndown service for converting html to markdown or vice versa
+const turndownService = new TurndownService();
+
 function init_refinery_out_ws(config) {
     if (refinery_out_ws == null) {
         try {
@@ -110,257 +113,230 @@ function append_otelcol_result(message) {
 }
 
 function init_otelcol_out_ws(config) {
-    if (otelcol_out_ws == null) {
-        try {
-            // setup a secure websocket if the config.host_name is not localhost
-            if(config.host_name.includes("localhost")) {
-                otelcol_out_ws = new WebSocket(`ws://${config.host_name}/otelcol_out`);
-            } else {
-                otelcol_out_ws = new WebSocket(`wss://${config.host_name}/otelcol_out`);
-            }
-            otelcol_out_ws.onmessage = (event) => {
-                const message = event.data;
-                // console.log("otelcol_out_ws: ", message);
-                // var textarea = document.getElementById("otelcol_result");
-                if(message !== "{{pong}}") {
-                    // textarea.value += message;
-                    // textarea.scrollTop = textarea.scrollHeight;
-                    // var value = otelcol_json_output.getValue();
-                    // value += message;
-                    // check if the send mode is set to auto, and if so,
-                    // we should send this off to the whatever output endpoint - that can receive otlp json
-                    otelcol_json_output.setValue(message);
-                    // put message into the cache, so that it can be revisited.
-                    append_otelcol_result(message);
-                    otelcol_json_output.setCursor(otelcol_json_output.lineCount(), 0);
-                    // if the send auto mode is enabled, then send the data to the endpoint.
-                    if (document.getElementById("otelcol_send_auto").value == "true") {
-                        var endpoint = document.getElementById("otelcol_send_endpoint").value;
-                        var apikey = document.getElementById("otelcol_send_apikey").value;
-                        var json_data = otelcol_json_output.getValue();
-                        document.getElementById("otelcol_send_status").innerHTML = "Sending...";
-                        fetch('/api/send_json?url=' + encodeURIComponent(endpoint), {
-                            method: 'POST',
-                            body: json_data,
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'x-honeycomb-team': apikey
-                                }
-                            })
-                            .then(response => response.json())
-                            .then(data => {
-                                console.log(data.message);
-                                document.getElementById("otelcol_send_status").innerHTML = data.message;
-                            })
-                            .catch(error => {
-                                console.error('Error sending json:', error)
-                                document.getElementById("otelcol_send_status").innerHTML = error.message;
-                            });
-                    }
-                } else {
-                    otelcol_out_ws_ping = 0;
+    var ws_url = (config.host_name.includes("localhost")) ? "ws" : "wss";
+    try {
+        otelcol_out_ws = new WebSocket(`${ws_url}://${config.host_name}/otelcol_out`);
+        otelcol_out_ws.onmessage = (event) => {
+            const message = event.data;
+            // console.log("otelcol_out_ws: ", message);
+            // var textarea = document.getElementById("otelcol_result");
+            if(message !== "{{pong}}") {
+                // textarea.value += message;
+                // textarea.scrollTop = textarea.scrollHeight;
+                // var value = otelcol_json_output.getValue();
+                // value += message;
+                // check if the send mode is set to auto, and if so,
+                // we should send this off to the whatever output endpoint - that can receive otlp json
+                otelcol_json_output.setValue(message);
+                // put message into the cache, so that it can be revisited.
+                append_otelcol_result(message);
+                otelcol_json_output.setCursor(otelcol_json_output.lineCount(), 0);
+                // if the send auto mode is enabled, then send the data to the endpoint.
+                if (document.getElementById("otelcol_send_auto").value == "true") {
+                    var endpoint = document.getElementById("otelcol_send_endpoint").value;
+                    var apikey = document.getElementById("otelcol_send_apikey").value;
+                    var json_data = otelcol_json_output.getValue();
+                    document.getElementById("otelcol_send_status").innerHTML = "Sending...";
+                    fetch('/api/send_json?url=' + encodeURIComponent(endpoint), {
+                        method: 'POST',
+                        body: json_data,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'x-honeycomb-team': apikey
+                            }
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            console.log(data.message);
+                            document.getElementById("otelcol_send_status").innerHTML = data.message;
+                        })
+                        .catch(error => {
+                            console.error('Error sending json:', error)
+                            document.getElementById("otelcol_send_status").innerHTML = error.message;
+                        });
                 }
-            };
-            otelcol_out_ws.onclose = () => {
-                console.log("otelcol_out_ws: Websocket connection closed.");
-                otelcol_out_ws = null;
+            } else {
                 otelcol_out_ws_ping = 0;
-                setTimeout(init_otelcol_out_ws(config), 1000);
-            };
-        } catch (error) {
-            console.error("Error initializing otelcol_out_ws:", error);
+            }
+        };
+        otelcol_out_ws.onclose = () => {
+            console.log("otelcol_out_ws: Websocket connection closed.");
+            otelcol_out_ws = null;
+            otelcol_out_ws_ping = 0;
             setTimeout(init_otelcol_out_ws(config), 1000);
-        }
+        };
+    } catch (error) {
+        console.error("Error initializing otelcol_out_ws:", error);
+        setTimeout(init_otelcol_out_ws(config), 1000);
     }
 }
 
 function init_otelcol_stdout_ws(config) {
+    var ws_url = (config.host_name.includes("localhost")) ? "ws" : "wss";
     // setup the websocket for otelcol standard output
-    if (otelcol_stdout_ws == null) {
-        try {
-            // setup a secure websocket if the config.host_name is not localhost
-            if(config.host_name.includes("localhost")) {
-                otelcol_stdout_ws = new WebSocket(`ws://${config.host_name}/otelcol_stdout`);
+    try {
+        // setup a secure websocket if the config.host_name is not localhost
+        otelcol_stdout_ws = new WebSocket(`${ws_url}://${config.host_name}/otelcol_stdout`);
+        otelcol_stdout_ws.onmessage = (event) => {
+            const message = event.data;
+            // console.log("otelcol_stdout_ws: ", message);
+            // var textarea = document.getElementById("otelcol_output");
+            if(message !== "{{pong}}") {
+                // textarea.value += message;
+                // textarea.scrollTop = textarea.scrollHeight;
+                var value = otelcol_output.getValue();
+                value += message;
+                otelcol_output.setValue(value);
+                otelcol_output.setCursor(otelcol_output.lineCount(), 0);
             } else {
-                otelcol_stdout_ws = new WebSocket(`wss://${config.host_name}/otelcol_stdout`);
-            }
-            otelcol_stdout_ws.onmessage = (event) => {
-                const message = event.data;
-                // console.log("otelcol_stdout_ws: ", message);
-                // var textarea = document.getElementById("otelcol_output");
-                if(message !== "{{pong}}") {
-                    // textarea.value += message;
-                    // textarea.scrollTop = textarea.scrollHeight;
-                    var value = otelcol_output.getValue();
-                    value += message;
-                    otelcol_output.setValue(value);
-                    otelcol_output.setCursor(otelcol_output.lineCount(), 0);
-                } else {
-                    otelcol_stdout_ws_ping = 0;
-                }
-            };
-            otelcol_stdout_ws.onclose = () => {
-                otelcol_stdout_ws = null;
                 otelcol_stdout_ws_ping = 0;
-                setTimeout(init_otelcol_stdout_ws(config), 1000);
-            };
-        } catch (error) {
-            console.error("Error initializing otelcol_stdout_ws:", error);
+            }
+        };
+        otelcol_stdout_ws.onclose = () => {
+            otelcol_stdout_ws = null;
+            otelcol_stdout_ws_ping = 0;
             setTimeout(init_otelcol_stdout_ws(config), 1000);
-        }
-    }  
+        };
+    } catch (error) {
+        console.error("Error initializing otelcol_stdout_ws:", error);
+        setTimeout(init_otelcol_stdout_ws(config), 1000);
+    }
 }
 
 function init_refinery_stdout_ws(config) {
+    var ws_url = (config.host_name.includes("localhost")) ? "ws" : "wss";
     // setup the websocket for refinery standard output
-    if (refinery_stdout_ws == null) {
-        try {
-            // setup a secure websocket if the config.host_name is not localhost
-            if(config.host_name.includes("localhost")) {
-                refinery_stdout_ws = new WebSocket(`ws://${config.host_name}/refinery_stdout`);
+    try {
+        // setup a secure websocket if the config.host_name is not localhost
+        refinery_stdout_ws = new WebSocket(`${ws_url}://${config.host_name}/refinery_stdout`);
+        refinery_stdout_ws.onmessage = (event) => {
+            const message = event.data;
+            // console.log("refinery_stdout_ws: ", message);
+            // var textarea = document.getElementById("refinery_output");
+            if(message !== "{{pong}}") {
+                // textarea.value += message;
+                // textarea.scrollTop = textarea.scrollHeight;
+                var value = refinery_output.getValue();
+                value += message;
+                refinery_output.setValue(value);
+                refinery_output.setCursor(refinery_output.lineCount(), 0);
             } else {
-                refinery_stdout_ws = new WebSocket(`wss://${config.host_name}/refinery_stdout`);
-            }
-            refinery_stdout_ws.onmessage = (event) => {
-                const message = event.data;
-                // console.log("refinery_stdout_ws: ", message);
-                // var textarea = document.getElementById("refinery_output");
-                if(message !== "{{pong}}") {
-                    // textarea.value += message;
-                    // textarea.scrollTop = textarea.scrollHeight;
-                    var value = refinery_output.getValue();
-                    value += message;
-                    refinery_output.setValue(value);
-                    refinery_output.setCursor(refinery_output.lineCount(), 0);
-                } else {
-                    refinery_stdout_ws_ping = 0;
-                }
-            };
-            refinery_stdout_ws.onclose = () => {
-                refinery_stdout_ws = null;
                 refinery_stdout_ws_ping = 0;
-                setTimeout(init_refinery_stdout_ws(config), 1000);
-            };
-        } catch (error) {
-            console.error("Error initializing refinery_stdout_ws:", error);
+            }
+        };
+        refinery_stdout_ws.onclose = () => {
+            refinery_stdout_ws = null;
+            refinery_stdout_ws_ping = 0;
             setTimeout(init_refinery_stdout_ws(config), 1000);
-        }
+        };
+    } catch (error) {
+        console.error("Error initializing refinery_stdout_ws:", error);
+        setTimeout(init_refinery_stdout_ws(config), 1000);
     }
 }
 
 function init_otelcol_setup_ws(config) {
+    var ws_url = (config.host_name.includes("localhost")) ? "ws" : "wss";
     // setup the websocket for otelcol setup
-    if (otelcol_setup_ws == null) {
-        try {
-            // setup a secure websocket if the config.host_name is not localhost
-            if(config.host_name.includes("localhost")) {
-                otelcol_setup_ws = new WebSocket(`ws://${config.host_name}/otelcol_setup`);
-            } else {
-                otelcol_setup_ws = new WebSocket(`wss://${config.host_name}/otelcol_setup`);
+    try {
+        otelcol_setup_ws = new WebSocket(`${ws_url}://${config.host_name}/otelcol_setup`);
+        otelcol_setup_ws.onmessage = (event) => {
+            const message = event.data;
+            if(message == "{{cancelled}}") {
+                // server has cancelled the installation
+                // cancel the installation
+                document.getElementById("otelcol_install_cancel").style.display = "none";
+                document.getElementById("otelcol_install").disabled = false;
+                document.getElementById("otelcol_install_status").innerText = "🔴 Cancelled";
             }
-            otelcol_setup_ws.onmessage = (event) => {
-                const message = event.data;
-                if(message == "{{cancelled}}") {
-                    // server has cancelled the installation
-                    // cancel the installation
-                    document.getElementById("otelcol_install_cancel").style.display = "none";
-                    document.getElementById("otelcol_install").disabled = false;
-                    document.getElementById("otelcol_install_status").innerText = "🔴 Cancelled";
+            else if(message != "{{pong}}") {
+                // parse the message as json
+                var json = JSON.parse(message);
+                // look for html in the message
+                if(json.html) {
+                    // render the html in the div with id 'otelcol_setup'
+                    document.getElementById("otelcol_install_status").innerHTML = json.html;
                 }
-                else if(message != "{{pong}}") {
-                    // parse the message as json
-                    var json = JSON.parse(message);
-                    // look for html in the message
-                    if(json.html) {
-                        // render the html in the div with id 'otelcol_setup'
-                        document.getElementById("otelcol_install_status").innerHTML = json.html;
-                    }
-                    if(json.status) {
-                        if(json.status == "success") {
-                            document.getElementById("otelcol_install").disabled = false;
-                            // should have success message here
-                            document.getElementById("otelcol_install_status").innerText = json.html;
-                            // hide the cancel button
-                            document.getElementById("otelcol_install_cancel").style.display = "none";
-                            // refresh the main page
-                            // refresh the main page, such that...
-                            refresh_otelcol_status();
-                        }
-                        else if(json.status == "downloading") {
-                            // do nothing - maybe set some animtation sequence..?
-                        }
-                    }
-                    // console.log("otelcol_setup_ws: ", message);
-                } 
-                else {
-                    otelcol_setup_ws_ping = 0;
-                }
-            };
-            otelcol_setup_ws.onclose = () => {
-                otelcol_setup_ws = null;
-                otelcol_setup_ws_ping = 0;
-                // try to reconnect
-                setTimeout(init_otelcol_setup_ws(config), 1000);
-            };
-        } catch (error) {
-            console.error("Error initializing otelcol_setup_ws:", error);
-            setTimeout(init_otelcol_setup_ws(config), 1000);
-        }
-    }
-}
-
-function init_refinery_setup_ws(config) {
-    // setup the websocket for refinery setup
-    if (refinery_setup_ws == null) {
-        try {
-            // setup a secure websocket if the config.host_name is not localhost
-            if(config.host_name.includes("localhost")) {
-                refinery_setup_ws = new WebSocket(`ws://${config.host_name}/refinery_setup`);
-            } else {
-                refinery_setup_ws = new WebSocket(`wss://${config.host_name}/refinery_setup`);
-            }
-            refinery_setup_ws.onmessage = (event) => {
-                const message = event.data;
-                if(message == "{{cancelled}}") {
-                    // server has cancelled the installation
-                    // cancel the installation
-                    document.getElementById("refinery_install_cancel").style.display = "none";
-                    document.getElementById("refinery_install").disabled = false;
-                    document.getElementById("refinery_install_status").innerText = "🔴 Cancelled";
-                }
-                else if(message != "{{pong}}") {
-                    var json = JSON.parse(message);
-                    // look for html in the message
-                    if(json.html) {
-                        // render the html in the div with id 'refinery_install_status'
-                        document.getElementById("refinery_install_status").innerHTML = json.html;
-                    }
+                if(json.status) {
                     if(json.status == "success") {
-                        document.getElementById("refinery_install").disabled = false;
+                        document.getElementById("otelcol_install").disabled = false;
                         // should have success message here
-                        document.getElementById("refinery_install_status").innerText = json.html;
+                        document.getElementById("otelcol_install_status").innerText = json.html;
                         // hide the cancel button
-                        document.getElementById("refinery_install_cancel").style.display = "none";
+                        document.getElementById("otelcol_install_cancel").style.display = "none";
                         // refresh the main page
-                        refresh_refinery_status();
+                        // refresh the main page, such that...
+                        refresh_otelcol_status();
                     }
                     else if(json.status == "downloading") {
                         // do nothing - maybe set some animtation sequence..?
                     }
-                } else {
-                    refinery_setup_ws_ping = 0;
                 }
-            };
-            refinery_setup_ws.onclose = () => {
-                refinery_setup_ws = null;
+                // console.log("otelcol_setup_ws: ", message);
+            } 
+            else {
+                otelcol_setup_ws_ping = 0;
+            }
+        };
+        otelcol_setup_ws.onclose = () => {
+            otelcol_setup_ws = null;
+            otelcol_setup_ws_ping = 0;
+            // try to reconnect
+            setTimeout(init_otelcol_setup_ws(config), 1000);
+        };
+    } catch (error) {
+        console.error("Error initializing otelcol_setup_ws:", error);
+        setTimeout(init_otelcol_setup_ws(config), 1000);
+    }
+}
+
+function init_refinery_setup_ws(config) {
+    var ws_url = (config.host_name.includes("localhost")) ? "ws" : "wss";
+    // setup the websocket for refinery setup
+    try {
+        // setup a secure websocket if the config.host_name is not localhost
+        refinery_setup_ws = new WebSocket(`${ws_url}://${config.host_name}/refinery_setup`);
+        refinery_setup_ws.onmessage = (event) => {
+            const message = event.data;
+            if(message == "{{cancelled}}") {
+                // server has cancelled the installation
+                // cancel the installation
+                document.getElementById("refinery_install_cancel").style.display = "none";
+                document.getElementById("refinery_install").disabled = false;
+                document.getElementById("refinery_install_status").innerText = "🔴 Cancelled";
+            }
+            else if(message != "{{pong}}") {
+                var json = JSON.parse(message);
+                // look for html in the message
+                if(json.html) {
+                    // render the html in the div with id 'refinery_install_status'
+                    document.getElementById("refinery_install_status").innerHTML = json.html;
+                }
+                if(json.status == "success") {
+                    document.getElementById("refinery_install").disabled = false;
+                    // should have success message here
+                    document.getElementById("refinery_install_status").innerText = json.html;
+                    // hide the cancel button
+                    document.getElementById("refinery_install_cancel").style.display = "none";
+                    // refresh the main page
+                    refresh_refinery_status();
+                }
+                else if(json.status == "downloading") {
+                    // do nothing - maybe set some animtation sequence..?
+                }
+            } else {
                 refinery_setup_ws_ping = 0;
-                // try to reconnect
-                setTimeout(init_refinery_setup_ws(config), 1000);
-            };
-        } catch (error) {
-            console.error("Error initializing refinery_setup_ws:", error);
+            }
+        };
+        refinery_setup_ws.onclose = () => {
+            refinery_setup_ws = null;
+            refinery_setup_ws_ping = 0;
+            // try to reconnect
             setTimeout(init_refinery_setup_ws(config), 1000);
-        }
+        };
+    } catch (error) {
+        console.error("Error initializing refinery_setup_ws:", error);
+        setTimeout(init_refinery_setup_ws(config), 1000);
     }
 }
 
@@ -607,7 +583,7 @@ async function init_page() {
         /**
          * Initialize the openai which handles JSON input of OTEL data.
          */
-        init_input_openai(config, "openai_4_input", "otel_input", [
+        init_input_openai("openai_4_input", "otel_input", [
             {
                 "role": "system",
                 "content": `You are a helpful assistant that generates Opentelemetry JSON data. 
@@ -639,7 +615,8 @@ async function init_page() {
             if(id_prefix == "otel_input") {
                 // end hook
                 // extract the json text from the domElement
-                var jsonText = domElement.innerText.match(/```(json)?(.*)```/)[2];
+                console.log("dom element text: " + domElement.innerText);
+                var jsonText = domElement.innerText.match(/```(json)?([\S\s]*)```/)[2];
                 // append the text to the otelcol_json_input
                 var jsonText = JSON.stringify(JSON.parse(jsonText), null, 2);
                 domElement.innerHTML = "<pre>" + jsonText + "</pre>";
@@ -1075,7 +1052,7 @@ function refresh_websocket() {
                             // something is not right, reset the ws
                             console.log("resetting ai assistant ws for " + key);
                             var _ws = new WebSocket(`ws://${config.host_name}/ai_assistant?id_prefix=${key}`);
-                            ai_assistant_ws[key] = _ws;
+                            init_input_openai_ws(config, key, _ws);
                         } else {
                             ai_assistant_ws_ping[key] = 1;
                             console.log("sending ping to ai assistant ws for " + key);

@@ -175,3 +175,5 @@ function init_textareas() {
         }
     });
 }
+
+// function to initialize the editor and their web sockets

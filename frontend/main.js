@@ -338,3 +338,6 @@ function refresh_main() {
     })
     .catch(error => console.error('Error fetching config:', error));
 }
+
+// function to make auto-scrollable divs to have specific height
+// so that any children divs may be able to scroll.

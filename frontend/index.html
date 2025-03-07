@@ -121,12 +121,12 @@
         </div>
         <div class="template-buttons">
           New trace and span id <input type="checkbox" id="otel_input_new_trace_span_id" name="otel_input_new_trace_span_id" checked/>
-          Strip timestamps <input type="checkbox" id="otel_input_strip_timestamps" name="otel_input_strip_timestamps" checked/>
+          Re-time timestamps <input type="checkbox" id="otel_input_strip_timestamps" name="otel_input_strip_timestamps" checked/>
         </div></form>
         <span id='otel_input_send_status'></span>
       </div>
-      <div style="height: 300px;">
-        <div id="openai_4_input">&nbsp;</div>
+      <div class="auto-scrollable">
+        <div id="openai_4_input" style="flex: 1; height: 100%;">&nbsp;</div>
       </div>
     </div>
     <div id="otelcol_top">
@@ -139,6 +139,7 @@
     <p id="refinery">🚧 Loading...</p>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://unpkg.com/turndown/dist/turndown.js"></script>
   <script src="openai.js"></script>
   <script src="editor.js"></script>
   <script src="main.js"></script>

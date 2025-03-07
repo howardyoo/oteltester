@@ -8,14 +8,13 @@
             <div class="info-outer-section">
                 <div id="otelcol_exporter_info" class="info-section"></div>
             </div>
-            <div class="openai-section" id="otelcol_exporter_openai_section">&nbsp;</div>
+            <div class="openai-section" id="otelcol_exporter_openai_section" style="max-height: 500px;">&nbsp;</div>
         </div>
     </div>
 </div>
 <script type="text/javascript">
     function init_exporters() {
         document.getElementById("otelcol_exporter_openai_section").innerHTML = '';
-        document.getElementById("otelcol_exporter_openai_section").appendChild(openai_chat_section("otelcol_exporter_openai_section", "exporter"));
 
         if (document.getElementById("otelcol_exporters_section") == null) {
             setTimeout(init_exporters, 100);
@@ -45,6 +44,54 @@
                     document.getElementById("otelcol_exporters_list").appendChild(button);
                 }
             }
+            var section_name = "exporter";
+            /**
+             * init part
+             */
+             init_input_openai(`otelcol_${section_name}_openai_section`, section_name, [
+            {
+                "role": "system",
+                "content": `You are a helpful assistant that generates OpenTelemetry Collector configuration. 
+                You will be given the current configuration and you will need to generate the next configuration.
+                You are to output the YAML data only, nothing else. Do not include any other text or comments. enclose the YAML data in \`\`\` and \`\`\` tags.`
+            }
+            ],
+            (id_prefix)=>{
+                // prompt hook
+                var prompt = [];
+                if(id_prefix == section_name) {
+                    var currentConfig = otelcol_editor.getValue();
+                    // check the otelcol_json_input and if the input is not empty and has length, then add it to the prompt
+                    var infoHTML = document.getElementById(`otelcol_${section_name}_info`).innerHTML;
+                    var inputMD = turndownService.turndown(infoHTML);
+                    if(inputMD && inputMD.length > 0) {
+                        prompt.push({
+                            "role": "system",
+                            "content": `The following is the current YAML configuration for the OpenTelemetry Collector: \`\`\`yaml|n${currentConfig}\`\`\``
+                        });
+                    }
+                    if(currentConfig && currentConfig.length > 0) {
+                        prompt.push({
+                            "role": "system",
+                            "content": `You are to use the following exporter to help you to generate the next configuration: \`\`\`markdown|n${inputMD}\`\`\``
+                        });
+                    }
+                }
+                return prompt;
+            }, 
+            (id_prefix)=>{
+                if(id_prefix == section_name) {
+                    // start hook
+                    // currently do nothing. pass.
+                }
+            }, 
+            (id_prefix, domElement)=>{
+                if(id_prefix == section_name) {
+                    // end hook
+                    // for now, simply set to the given domElement.
+                    // domElement.innerHTML = "<pre>" + domeElement.innerText + "</pre>";
+                }
+            });
         }
     }
     init_exporters();
