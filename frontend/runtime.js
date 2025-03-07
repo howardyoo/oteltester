@@ -583,7 +583,21 @@ async function init_page() {
             {
                 "role": "system",
                 "content": `You are a helpful assistant that generates Opentelemetry JSON data. 
+                Validate the JSON data before outputting it. Make sure the JSON data is conform to the OpenTelemetry specification.
+                Use OpenTelemetry sementic convention when naming the attributes as best as possible.
                 You are to output the JSON data only, nothing else. Do not include any other text or comments. enclose the JSON data in \`\`\` and \`\`\` tags.`
+            },
+            {
+                "role": "system",
+                "content": `Here is an example of the TRACE JSON data that you can use to generate the next JSON data in case user wants to generate a trace: \`\`\`json|n${otel_example_trace}\`\`\``
+            },
+            {
+                "role": "system",
+                "content": `Here is an example of the METRIC JSON data that you can use to generate the next JSON data in case user wants to generate a metric: \`\`\`json|n${otel_example_metric}\`\`\``
+            },
+            {
+                "role": "system",
+                "content": `Here is an example of the LOG JSON data that you can use to generate the next JSON data in case user wants to generate a log: \`\`\`json|n${otel_example_log}\`\`\``
             }
         ],
         (id_prefix)=>{

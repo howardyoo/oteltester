@@ -102,6 +102,22 @@ body {
     font-size: 14px;
   }
 
+  .header-button {
+    background-color: #1890ff;
+    color: #ffffff;
+    border: none;
+    border-radius: 10px;
+    font-size: 10px;
+    margin-left: 5px;
+    padding: 4px;
+    vertical-align: middle;
+  }
+
+  .header-button:hover {
+    background-color: #0056b3;
+    cursor: pointer;
+  }
+
   /* buttons layout */
   .template-buttons {
     display: flex;

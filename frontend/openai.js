@@ -13,8 +13,11 @@ function reset_ai_assistant_ws(id_prefix) {
 function input_openai_send(id_prefix) {
     const chatInput = document.getElementById(`${id_prefix}_openai_chat_input`);
     const message = chatInput.value;
+    if(message.trim() == "") {
+        return;
+    }
     const chatMessages = document.getElementById(`${id_prefix}_openai_chat_messages`);
-    chatInput.value = '';
+
     // need to reset the chat input height
     chatInput.style.height = '30px';
     var _div = document.createElement('div');
@@ -35,6 +38,16 @@ function input_openai_send(id_prefix) {
             prompt = prompt.concat(more_prompts);
         }
     }
+    // get the messages from the chat messages and convert them into prompt
+    const chatHistory = document.getElementById(`${id_prefix}_openai_chat_messages`);
+    const messages = chatHistory.querySelectorAll(".chat-message");
+    for (const message of messages) {
+        prompt.push({
+            "role": message.classList.contains("chat-message-user") ? "user" : "assistant",
+            "content": message.innerText
+        });
+    }
+    // and add the new message to the prompt
     prompt[prompt.length] = {
         "role": "user",
         "content": message
@@ -44,6 +57,14 @@ function input_openai_send(id_prefix) {
     } else {
         reset_ai_assistant_ws(id_prefix);
     }
+    // clear the chat input
+    chatInput.value = '';
+}
+
+// clear the chat history of a particular openai chat section
+function openai_clear_chat_history(id_prefix) {
+    const chatHistory = document.getElementById(`${id_prefix}_openai_chat_messages`);
+    chatHistory.innerHTML = '';
 }
 
 // function to create the openai chat section
@@ -55,7 +76,15 @@ function openai_chat_section(id_prefix, parent) {
 
     // Create header
     const header = document.createElement('h3');
-    header.textContent = '🧠 AI Assistant';
+    header.textContent = '🧠 AI Assistant ';
+    // add a button to clear the chat history
+    const clearButton = document.createElement('button');
+    clearButton.classList.add('header-button');
+    clearButton.textContent = 'Clear chat';
+    clearButton.addEventListener('click', () => {
+        openai_clear_chat_history(id_prefix);
+    }, {passive: true});
+    header.appendChild(clearButton);
     
     // Create content container
     const content = document.createElement('div');
@@ -104,10 +133,11 @@ function openai_chat_section(id_prefix, parent) {
     textarea.addEventListener('keydown', (event) => {
         // console.log("Key down");
         if (event.key === 'Enter' && !event.shiftKey) {
+            // we do not want the enter key to create a new line in the textarea
             event.preventDefault();
             input_openai_send(id_prefix);
         }
-    }, {passive: true});
+    }, {passive: false});
     textarea.addEventListener('input', () => { 
         textarea.style.height = 'auto';
         textarea.style.height = textarea.scrollHeight + 'px';
@@ -275,3 +305,304 @@ function init_input_openai(id_target, id_prefix, prompt = [], prompt_hook = null
                 });
         });
 }
+
+const otel_example_trace = `
+{
+  "resourceSpans": [
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "my.service"
+            }
+          }
+        ]
+      },
+      "scopeSpans": [
+        {
+          "scope": {
+            "name": "my.library",
+            "version": "1.0.0",
+            "attributes": [
+              {
+                "key": "my.scope.attribute",
+                "value": {
+                  "stringValue": "some scope attribute"
+                }
+              }
+            ]
+          },
+          "spans": [
+            {
+              "traceId": "5B8EFFF798038103D269B633813FC60C",
+              "spanId": "EEE19B7EC3C1B174",
+              "parentSpanId": "EEE19B7EC3C1B173",
+              "name": "I'm a server span",
+              "startTimeUnixNano": "1544712660000000000",
+              "endTimeUnixNano": "1544712661000000000",
+              "kind": 2,
+              "attributes": [
+                {
+                  "key": "my.span.attr",
+                  "value": {
+                    "stringValue": "some value"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+`
+
+const otel_example_metric = `
+{
+  "resourceMetrics": [
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "my.service"
+            }
+          }
+        ]
+      },
+      "scopeMetrics": [
+        {
+          "scope": {
+            "name": "my.library",
+            "version": "1.0.0",
+            "attributes": [
+              {
+                "key": "my.scope.attribute",
+                "value": {
+                  "stringValue": "some scope attribute"
+                }
+              }
+            ]
+          },
+          "metrics": [
+            {
+              "name": "my.counter",
+              "unit": "1",
+              "description": "I am a Counter",
+              "sum": {
+                "aggregationTemporality": 1,
+                "isMonotonic": true,
+                "dataPoints": [
+                  {
+                    "asDouble": 5,
+                    "startTimeUnixNano": "1544712660300000000",
+                    "timeUnixNano": "1544712660300000000",
+                    "attributes": [
+                      {
+                        "key": "my.counter.attr",
+                        "value": {
+                          "stringValue": "some value"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "name": "my.gauge",
+              "unit": "1",
+              "description": "I am a Gauge",
+              "gauge": {
+                "dataPoints": [
+                  {
+                    "asDouble": 10,
+                    "timeUnixNano": "1544712660300000000",
+                    "attributes": [
+                      {
+                        "key": "my.gauge.attr",
+                        "value": {
+                          "stringValue": "some value"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "name": "my.histogram",
+              "unit": "1",
+              "description": "I am a Histogram",
+              "histogram": {
+                "aggregationTemporality": 1,
+                "dataPoints": [
+                  {
+                    "startTimeUnixNano": "1544712660300000000",
+                    "timeUnixNano": "1544712660300000000",
+                    "count": 2,
+                    "sum": 2,
+                    "bucketCounts": [1,1],
+                    "explicitBounds": [1],
+                    "min": 0,
+                    "max": 2,
+                    "attributes": [
+                      {
+                        "key": "my.histogram.attr",
+                        "value": {
+                          "stringValue": "some value"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "name": "my.exponential.histogram",
+              "unit": "1",
+              "description": "I am an Exponential Histogram",
+              "exponentialHistogram": {
+                "aggregationTemporality": 1,
+                "dataPoints": [
+                  {
+                    "startTimeUnixNano": "1544712660300000000",
+                    "timeUnixNano": "1544712660300000000",
+                    "count": 3,
+                    "sum": 10,
+                    "scale": 0,
+                    "zeroCount": 1,
+                    "positive": {
+                      "offset": 1,
+                      "bucketCounts": [0,2]
+                    },
+                    "min": 0,
+                    "max": 5,
+                    "zeroThreshold": 0,
+                    "attributes": [
+                      {
+                        "key": "my.exponential.histogram.attr",
+                        "value": {
+                          "stringValue": "some value"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+`;
+
+const otel_example_log = `
+{
+  "resourceLogs": [
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "my.service"
+            }
+          }
+        ]
+      },
+      "scopeLogs": [
+        {
+          "scope": {
+            "name": "my.library",
+            "version": "1.0.0",
+            "attributes": [
+              {
+                "key": "my.scope.attribute",
+                "value": {
+                  "stringValue": "some scope attribute"
+                }
+              }
+            ]
+          },
+          "logRecords": [
+            {
+              "timeUnixNano": "1544712660300000000",
+              "observedTimeUnixNano": "1544712660300000000",
+              "severityNumber": 10,
+              "severityText": "Information",
+              "traceId": "5B8EFFF798038103D269B633813FC60C",
+              "spanId": "EEE19B7EC3C1B174",
+              "body": {
+                "stringValue": "Example log record"
+              },
+              "attributes": [
+                {
+                  "key": "string.attribute",
+                  "value": {
+                    "stringValue": "some string"
+                  }
+                },
+                {
+                  "key": "boolean.attribute",
+                  "value": {
+                    "boolValue": true
+                  }
+                },
+                {
+                  "key": "int.attribute",
+                  "value": {
+                    "intValue": "10"
+                  }
+                },
+                {
+                  "key": "double.attribute",
+                  "value": {
+                    "doubleValue": 637.704
+                  }
+                },
+                {
+                  "key": "array.attribute",
+                  "value": {
+                    "arrayValue": {
+                      "values": [
+                        {
+                          "stringValue": "many"
+                        },
+                        {
+                          "stringValue": "values"
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "key": "map.attribute",
+                  "value": {
+                    "kvlistValue": {
+                      "values": [
+                        {
+                          "key": "some.map.key",
+                          "value": {
+                            "stringValue": "some value"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+`;
