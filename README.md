@@ -58,3 +58,15 @@ To stop the application, run the following command:
 
 # Accessing the application
 - use the browser to access the application at `http://localhost:3000/`
+
+# Using OpenAI LLM
+- Tester is now capable of using the OpenAI LLM to help generate the OTEL JSON message and OTEL collector configuration.
+- In order to use it, create .env file in the root directory and add the following:
+```
+OPENAI_API_KEY=<your-openai-api-key>
+OPENAI_MODEL=<your-openai-model>
+```
+- You can get the OpenAI API key from [here](https://platform.openai.com/api-keys)
+- You can get the OpenAI model from [here](https://platform.openai.com/docs/models)
+- You can also use .env.development and run `npm run dev` to use it locally.
+- Using the LLM API is optional, and if the proper API key and model are not set, the application will not display the LLM features.
