@@ -166,7 +166,6 @@ function init_otelcol_out_ws(config) {
             setTimeout(init_otelcol_out_ws(config), 1000);
         };
     } catch (error) {
-        console.error("Error initializing otelcol_out_ws:", error);
         setTimeout(init_otelcol_out_ws(config), 1000);
     }
 }
@@ -198,7 +197,6 @@ function init_otelcol_stdout_ws(config) {
             setTimeout(init_otelcol_stdout_ws(config), 1000);
         };
     } catch (error) {
-        console.error("Error initializing otelcol_stdout_ws:", error);
         setTimeout(init_otelcol_stdout_ws(config), 1000);
     }
 }
@@ -230,7 +228,6 @@ function init_refinery_stdout_ws(config) {
             setTimeout(init_refinery_stdout_ws(config), 1000);
         };
     } catch (error) {
-        console.error("Error initializing refinery_stdout_ws:", error);
         setTimeout(init_refinery_stdout_ws(config), 1000);
     }
 }
@@ -285,7 +282,6 @@ function init_otelcol_setup_ws(config) {
             setTimeout(init_otelcol_setup_ws(config), 1000);
         };
     } catch (error) {
-        console.error("Error initializing otelcol_setup_ws:", error);
         setTimeout(init_otelcol_setup_ws(config), 1000);
     }
 }
@@ -335,7 +331,7 @@ function init_refinery_setup_ws(config) {
             setTimeout(init_refinery_setup_ws(config), 1000);
         };
     } catch (error) {
-        console.error("Error initializing refinery_setup_ws:", error);
+        // do not log anything here, but retry establishing the websocket
         setTimeout(init_refinery_setup_ws(config), 1000);
     }
 }
@@ -1050,12 +1046,10 @@ function refresh_websocket() {
                         if (ai_assistant_ws_ping[key] == 1) {
                             ai_assistant_ws_ping[key] = 0;
                             // something is not right, reset the ws
-                            console.log("resetting ai assistant ws for " + key);
                             var _ws = new WebSocket(`ws://${config.host_name}/ai_assistant?id_prefix=${key}`);
                             init_input_openai_ws(config, key, _ws);
                         } else {
                             ai_assistant_ws_ping[key] = 1;
-                            console.log("sending ping to ai assistant ws for " + key);
                             ai_assistant_ws[key].send("ping");
                         }
                     }

@@ -42,7 +42,6 @@ function input_openai_send(id_prefix) {
     if(ws.readyState == WebSocket.OPEN) {
         ws.send(JSON.stringify(prompt));
     } else {
-        console.log("resetting ai assistant ws for " + id_prefix + " because it is not in the open state.");
         reset_ai_assistant_ws(id_prefix);
     }
 }
@@ -64,7 +63,6 @@ function openai_chat_section(id_prefix, parent) {
     content.style.display = 'flex';
     content.style.flexDirection = 'column';
     if(parent) {
-        console.log("parent height: " + parent.clientHeight);
         if(parent.clientHeight > 0) {
             // subtract 100px from the height to account for the header and input container
             content.style.maxHeight = parent.clientHeight - 100 + "px";
@@ -72,7 +70,6 @@ function openai_chat_section(id_prefix, parent) {
             // subtract 100px from the height to account for the header and input container
             // get the height from the style.maxHeight
             content.style.maxHeight = (parent.style.maxHeight.replace("px", "") - 100) + "px";
-            console.log("content max height: " + content.style.maxHeight);
         } else {
             // by default, set the max height to 300px
             content.style.maxHeight = "300px";
@@ -110,11 +107,11 @@ function openai_chat_section(id_prefix, parent) {
             event.preventDefault();
             input_openai_send(id_prefix);
         }
-    });
+    }, {passive: true});
     textarea.addEventListener('input', () => { 
         textarea.style.height = 'auto';
         textarea.style.height = textarea.scrollHeight + 'px';
-    });
+    }, {passive: true});
 
     // Create send button
     const button = document.createElement('button');
@@ -131,7 +128,7 @@ function openai_chat_section(id_prefix, parent) {
     button.addEventListener('click', () => {
         // console.log("Sending message");
         input_openai_send(id_prefix);
-    });
+    }, {passive: true});
 
     // Create messages container
     const messages = document.createElement('div');

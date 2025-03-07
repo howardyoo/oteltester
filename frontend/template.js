@@ -258,7 +258,7 @@ function init_template() {
                 })
                 .catch(error => console.error('Error fetching otelcol config:', error));
         }
-    });
+    }, { passive: true});
 
     document.getElementById("trace_medium").addEventListener("click", () => {
         // load up the simple trace json into the text area 'otel_input'
@@ -271,7 +271,7 @@ function init_template() {
                 })
                 .catch(error => console.error('Error fetching otelcol config:', error));
         }
-    });
+    }, { passive: true});
 
     document.getElementById("log_simple").addEventListener("click", () => {
         // load up the simple trace json into the text area 'otel_input'
@@ -284,7 +284,7 @@ function init_template() {
                 })
                 .catch(error => console.error('Error fetching otelcol config:', error));
         }
-    });
+    }, { passive: true});
 
     document.getElementById("metric_simple").addEventListener("click", () => {
         // load up the simple trace json into the text area 'otel_input'
@@ -297,6 +297,6 @@ function init_template() {
                 })
                 .catch(error => console.error('Error fetching otelcol config:', error));
         }
-    });
+    }, { passive: true});
 }
 
