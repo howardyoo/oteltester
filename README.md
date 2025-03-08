@@ -59,7 +59,39 @@ To stop the application, run the following command:
 # Accessing the application
 - use the browser to access the application at `http://localhost:3000/`
 
-# Using OpenAI LLM
+# Using Tester
+
+## About OTEL JSON data
+- OTEL JSON data can be of three types: trace, metric, and log.
+- Their format is different, and you can find more details in the following links:
+  - [OTEL specification](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification)
+  - [OTEL trace example](https://raw.githubusercontent.com/open-telemetry/opentelemetry-proto/refs/heads/main/examples/trace.json)
+  - [OTEL metric example](https://raw.githubusercontent.com/open-telemetry/opentelemetry-proto/refs/heads/main/examples/metrics.json)
+  - [OTEL log example](https://raw.githubusercontent.com/open-telemetry/opentelemetry-proto/refs/heads/main/examples/logs.json)
+
+## Sending multiple data
+- OTEL does not allow containing different types of data in a single message.
+- However, there are cases where having multiple types of data in a single message is useful, and Tester supports this by allowing user to send multiple messages in a single request.
+- When user sends multiple messages, Tester will send them to the collector in a series of requests, each containing only one type of data.
+- Combining data in a single message can be done by having a JSON array [ ] at the root of the message, and having the actual data as elements of the array.
+- For example, if user wants to send a trace and a metric, the message should look like the following:
+```JSON
+[
+  {
+    "resourceTrace": {...}
+  },
+  {
+    "resourceMetric": {...}
+  },
+  {
+    "resourceLog": {...}
+  }
+]
+```
+- When user sends this message, Tester will iterate through the array and process each element as a separate message, and submit them to the collector in order of appearance.
+- ⚠️ Note, however, that this message is NOT a valid OTEL JSON message format.
+
+## Using OpenAI LLM
 - Tester is now capable of using the OpenAI LLM to help generate the OTEL JSON message and OTEL collector configuration.
 - In order to use it, create .env file in the root directory and add the following:
 ```

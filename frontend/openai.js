@@ -550,6 +550,12 @@ const otel_example_log = `
                   }
                 },
                 {
+                  "key": "meta.annotation_type",
+                  "value": {
+                    "stringValue": "span_event"
+                  }
+                },
+                {
                   "key": "boolean.attribute",
                   "value": {
                     "boolValue": true

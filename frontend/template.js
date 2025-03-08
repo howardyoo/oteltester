@@ -6,7 +6,7 @@ function new_span_id() {
     return crypto.randomUUID().replace(/-/g, '').slice(0, 16);
 }
 
-function apply_trace_template(json, new_ids = false, strip_time = false) {
+function apply_trace_template(json, new_ids = false, strip_time = false, idMap = {}) {
     if (json.resourceSpans) {
         const curr_time = BigInt(Date.now()) * BigInt(1000000);
         var idMap = {};
@@ -52,14 +52,15 @@ function apply_trace_template(json, new_ids = false, strip_time = false) {
                                     span.spanId = span_id;
                                 }
                             }
-                            if (span.parentSpanId && span.parentSpanId.match(template_regex)) {
-                                if (idMap[span.parentSpanId]) {
-                                    span.parentSpanId = idMap[span.parentSpanId];
-                                }
-                            } else if (new_ids) {
-                                // check if the parentSpanId is in the map
-                                if (idMap[span.parentSpanId]) {
-                                    span.parentSpanId = idMap[span.parentSpanId];
+                            if (span.parentSpanId) {
+                                if (span.parentSpanId.match(template_regex)) {
+                                    if (idMap[span.parentSpanId]) {
+                                        span.parentSpanId = idMap[span.parentSpanId];
+                                    }
+                                } else if (new_ids) {
+                                    var new_id = new_span_id();
+                                    idMap[span.parentSpanId] = new_id;
+                                    span.parentSpanId = new_id;
                                 }
                             }
                             const startTimeNano = BigInt(span.startTimeUnixNano);
@@ -94,7 +95,7 @@ function apply_trace_template(json, new_ids = false, strip_time = false) {
     return json;
 }
 
-function apply_log_template(json, new_ids = false, strip_time = false) {
+function apply_log_template(json, new_ids = false, strip_time = false, idMap = {}) {
     if (json.resourceLogs) {
         const curr_time = BigInt(Date.now()) * BigInt(1000000);
         var idMap = {};
@@ -158,7 +159,7 @@ function apply_log_template(json, new_ids = false, strip_time = false) {
     return json;
 }
 
-function apply_datapoint_template(datapoints, curr_time, strip_time, datapoints_with_time) {
+function apply_datapoint_template(datapoints, curr_time, strip_time, datapoints_with_time, idMap = {}) {
     if(datapoints) {
         datapoints.forEach(dp => {
             const dataPointTimeNano = BigInt(dp.timeUnixNano);
@@ -174,10 +175,9 @@ function apply_datapoint_template(datapoints, curr_time, strip_time, datapoints_
     }
 }
 
-function apply_metric_template(json, new_ids = false, strip_time = false) {
+function apply_metric_template(json, new_ids = false, strip_time = false, idMap = {}) {
     if (json.resourceMetrics) {
         const curr_time = BigInt(Date.now()) * BigInt(1000000);
-        var idMap = {};
         var datapoints_with_time = [];
         json.resourceMetrics.forEach(rm => {
             if (rm.scopeMetrics) {
@@ -185,18 +185,18 @@ function apply_metric_template(json, new_ids = false, strip_time = false) {
                     if (sm.metrics) {
                         sm.metrics.forEach(m => {
                             if (m.sum) {
-                                apply_datapoint_template(m.sum.dataPoints, curr_time, strip_time,datapoints_with_time);
+                                apply_datapoint_template(m.sum.dataPoints, curr_time, strip_time,datapoints_with_time, idMap);
                             }
                             if (m.gauge) {
-                                apply_datapoint_template(m.gauge.dataPoints, curr_time, strip_time,datapoints_with_time);
+                                apply_datapoint_template(m.gauge.dataPoints, curr_time, strip_time,datapoints_with_time, idMap);
                             }
 
                             if (m.histogram) {
-                                apply_datapoint_template(m.histogram.dataPoints, curr_time, strip_time, datapoints_with_time);
+                                apply_datapoint_template(m.histogram.dataPoints, curr_time, strip_time, datapoints_with_time, idMap);
                             }
 
                             if (m.exponentialHistogram) {
-                                apply_datapoint_template(m.exponentialHistogram.dataPoints, curr_time, strip_time, datapoints_with_time);
+                                apply_datapoint_template(m.exponentialHistogram.dataPoints, curr_time, strip_time, datapoints_with_time, idMap);
                             }
                         });
                     }
@@ -225,16 +225,17 @@ const template_regex = /\{\{.*?\}\}/g;
 
 // apply template rules to the json object, and return the new json object
 function apply_template(json, new_ids = false, strip_time = false) {
+    var idMap = {};
     if (Array.isArray(json)) {
         json.forEach(item => {
-            apply_trace_template(item, new_ids, strip_time);
-            apply_log_template(item, new_ids, strip_time);
-            apply_metric_template(item, new_ids, strip_time);
+            apply_trace_template(item, new_ids, strip_time, idMap);
+            apply_log_template(item, new_ids, strip_time, idMap);
+            apply_metric_template(item, new_ids, strip_time, idMap);
         });
     } else {
-        apply_trace_template(json, new_ids, strip_time);
-        apply_log_template(json, new_ids, strip_time);
-        apply_metric_template(json, new_ids, strip_time);
+        apply_trace_template(json, new_ids, strip_time, idMap);
+        apply_log_template(json, new_ids, strip_time, idMap);
+        apply_metric_template(json, new_ids, strip_time, idMap);
     }
     return json;
 }
