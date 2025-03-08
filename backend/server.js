@@ -490,51 +490,53 @@ app.get("/api/otelcol_modules", async (req, res) => {
 
 // get the json provided in the request body and submit it to 
 // the url given
-app.post("/api/send_json", (req, res) => {
+app.post("/api/send_json", async (req, res) => {
   var url = req.query["url"];
   var json = req.body;
   var headers = {};
   headers['Content-Type'] = 'application/json';
-  // in case it contains honeycomb api key, forward it to the endpoint
   if(req.headers['x-honeycomb-team']) {
     headers['x-honeycomb-team'] = req.headers['x-honeycomb-team'];
   }
   
-  // if json is array,
   if(Array.isArray(json)) {
-    // iterate over the array and process them each
-    for(var j of json) {
-      if ( j.resourceSpans ) {
-        if ( !url.endsWith('/v1/traces') ) {
-          url += '/v1/traces';
+    try {
+      var total = json.length;
+      var processed = 0;
+      
+      // Process each item sequentially
+      for(var j of json) {
+        var url_to_use = url;
+        if ( j.resourceSpans ) {
+          if ( !url.endsWith('/v1/traces') ) {
+            url_to_use += '/v1/traces';
+          }
+        } else if ( j.resourceMetrics ) {
+          if ( !url.endsWith('/v1/metrics') ) {
+            url_to_use += '/v1/metrics';
+          }
+        } else if ( j.resourceLogs ) {
+          if ( !url.endsWith('/v1/logs') ) {
+            url_to_use += '/v1/logs';
+          }
         }
-      } else if ( j.resourceMetrics ) {
-        if ( !url.endsWith('/v1/metrics') ) {
-          url += '/v1/metrics';
-        }
-      } else if ( j.resourceLogs ) {
-        if ( !url.endsWith('/v1/logs') ) {
-          url += '/v1/logs';
+        console.log("send json url: " + url_to_use);
+        
+        // Wait for each request to complete before moving to the next
+        const response = await fetch(url_to_use, {
+          method: 'POST',
+          body: JSON.stringify(j),
+          headers: headers
+        });
+        
+        if (response.status === 200) {
+          processed++;
         }
       }
-      console.log("send json url: " + url);
-      headers['Content-Length'] = j.length;
-      fetch(url, {
-        method: 'POST',
-        body: JSON.stringify(j),
-        headers: headers
-      })
-      .then(response => {
-        if (response.status === 200) {
-          res.json({message: "✅ JSON sent successfully"});
-        } else {
-          res.status(response.status).json({error: true,message: "❌ Failed to send json"});
-        }
-      })
-      .catch(error => {
-        console.error('Error sending json:', error);
-        res.status(500).json({error: true, message: "❌ Failed to send json"});
-      });
+      res.json({message: `✅ JSON sent successfully (${processed}/${total})`});
+    } catch (error) {
+      console.error('Error sending json:', error);
+      res.status(500).json({error: true, message: "❌ Failed to send json"});
     }
   } else {
     if ( json.resourceSpans ) {

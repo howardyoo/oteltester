@@ -91,6 +91,21 @@ To stop the application, run the following command:
 - When user sends this message, Tester will iterate through the array and process each element as a separate message, and submit them to the collector in order of appearance.
 - ⚠️ Note, however, that this message is NOT a valid OTEL JSON message format.
 
+## How to set time for the data
+- Often times, it is not useful to use what was contained inside the OTEL JSON data's timestamps (which is in UNIX nano seconds).
+- Therefore, tester would recognize the following conventions
+  - Any time lower than the current time will be considered as the relative time from the current time.
+  - The largest time will be used as the current time.
+  - The time can have a unit of (ms, s, m, h)
+  - The time can be in floating number (e.g. 0.5s, 1.5ms)
+  - For example, if user sets the start time to 0, and set the end time to 1s, then the span will have 1 second of duration.
+    - Then, if there is a span event that has the timestamp of 0.5s, it will be in the middle of the span.
+
+## Re-creating trace and span id
+- In the UI, by default, the original trace and span id will be re-placed by new ones (you can optionally disable it).
+- Also, you can use a special placeholder such as `{{trace.1}}` or `{{span.1}}` to refer to the trace id or span id, such that it can later be used as variables in the other data.
+  - this is useful when you want to create a parent and child relationship between telemetries (e.g. parent span and child span or parent span and child log).
+
 ## Using OpenAI LLM
 - Tester is now capable of using the OpenAI LLM to help generate the OTEL JSON message and OTEL collector configuration.
 - In order to use it, create .env file in the root directory and add the following:

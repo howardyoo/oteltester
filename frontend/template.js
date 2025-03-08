@@ -6,10 +6,45 @@ function new_span_id() {
     return crypto.randomUUID().replace(/-/g, '').slice(0, 16);
 }
 
-function apply_trace_template(json, new_ids = false, strip_time = false, idMap = {}) {
+// find the largest time in the json object
+// also convert if the time has unit (ms, s, m, h) to nano seconds
+function find_largest_time(json) {
+    function convertToNano(value) {
+        const timeRegex = /^(\d+(\.\d+)?)\s*(s|ms|m|h)$/;
+        const match = value.match(timeRegex);
+        if (match) {
+            let num = parseFloat(match[1], 10);
+            switch (match[3]) {
+                case 'ms': return num * 1_000_000;
+                case 's': return num * 1_000_000_000;
+                case 'm': return num * 60 * 1_000_000_000;
+                case 'h': return num * 60 * 60 * 1_000_000_000;
+            }
+        }
+        return isNaN(value) ? null : value;
+    }
+    // either endTimeUnixNano or observedTimeUnixNano or timeUnixNano or startTimeUnixNano
+    var maxTime = null;
+    function traverse(obj) {
+        if (typeof obj !== 'object' || obj === null) return;
+        for (let key in obj) {
+            if (key.endsWith('UnixNano')) {
+                let convertedTime = convertToNano(obj[key]);
+                if (convertedTime !== null) {
+                    maxTime = maxTime === null ? convertedTime : (convertedTime > maxTime ? convertedTime : maxTime);
+                    obj[key] = convertedTime.toString();
+                }
+            } else if (typeof obj[key] === 'object') {
+                traverse(obj[key]);
+            }
+        }
+    }
+    traverse(json);
+    return BigInt(maxTime);
+}
+
+function apply_trace_template(json, new_ids = false, strip_time = false, idMap, curr_time, largest_time) {
     if (json.resourceSpans) {
-        const curr_time = BigInt(Date.now()) * BigInt(1000000);
-        var idMap = {};
         var spans_with_time = [];
         json.resourceSpans.forEach(rs => {
             if (rs.scopeSpans) {
@@ -64,13 +99,8 @@ function apply_trace_template(json, new_ids = false, strip_time = false, idMap =
                                 }
                             }
                             const startTimeNano = BigInt(span.startTimeUnixNano);
-                            if (strip_time) {
+                            if (strip_time || startTimeNano < curr_time) {
                                 spans_with_time.push(span);
-                            }
-                            else if (startTimeNano < curr_time) {
-                                const newStartTime = curr_time + startTimeNano;
-                                span.startTimeUnixNano = newStartTime.toString();
-                                span.endTimeUnixNano = (newStartTime + BigInt(span.endTimeUnixNano)).toString();
                             }
                         });
                     }
@@ -78,12 +108,6 @@ function apply_trace_template(json, new_ids = false, strip_time = false, idMap =
             }
         });
         if (spans_with_time.length > 0) {
-            // sort the spans by startTimeUnixNano
-            spans_with_time.sort((a, b) => {
-                return Number(a.endTimeUnixNano) - Number(b.endTimeUnixNano);
-            });
-            // get the largest startTimeUnixNano
-            const largest_time = BigInt(spans_with_time[spans_with_time.length - 1].endTimeUnixNano);
             for (var i = 0; i < spans_with_time.length; i++) {
                 var new_start_time = curr_time - (largest_time - BigInt(spans_with_time[i].startTimeUnixNano));
                 var new_end_time = curr_time - (largest_time - BigInt(spans_with_time[i].endTimeUnixNano));
@@ -95,10 +119,8 @@ function apply_trace_template(json, new_ids = false, strip_time = false, idMap =
     return json;
 }
 
-function apply_log_template(json, new_ids = false, strip_time = false, idMap = {}) {
+function apply_log_template(json, new_ids = false, strip_time = false, idMap, curr_time, largest_time) {
     if (json.resourceLogs) {
-        const curr_time = BigInt(Date.now()) * BigInt(1000000);
-        var idMap = {};
         var logs_with_time = [];
         json.resourceLogs.forEach(rl => {
             if (rl.scopeLogs) {
@@ -106,36 +128,46 @@ function apply_log_template(json, new_ids = false, strip_time = false, idMap = {
                     if (sl.logRecords) {
                         sl.logRecords.forEach(lr => {
                             const logTimeNano = BigInt(lr.timeUnixNano);
-                            if (strip_time) {
+                            if (strip_time || logTimeNano < curr_time) {
                                 logs_with_time.push(lr);
                             }
-                            if (new_ids) {
-                                 if(lr.attributes) {
-                                    lr.attributes.forEach(attr => {
-                                        if (attr.key == "traceId") {
-                                            if (idMap[attr.value.stringValue]) {
-                                                attr.value.stringValue = idMap[attr.value.stringValue];
-                                            } else {
-                                                var new_id = new_trace_id();
-                                                idMap[attr.value.stringValue] = new_id;
-                                                attr.value.stringValue = new_id;
-                                            }
-                                        } else if (attr.key == "spanId") {
-                                            if (idMap[attr.value.stringValue]) {
-                                                attr.value.stringValue = idMap[attr.value.stringValue];
-                                            } else {
-                                                var new_id = new_span_id();
-                                                idMap[attr.value.stringValue] = new_id;
-                                                attr.value.stringValue = new_id;
-                                            }
-                                        }
-                                    });
-                                 }
+                            if (lr.traceId) {
+                                if (lr.traceId.match(template_regex) ) {
+                                    if (idMap[lr.traceId]) {
+                                        lr.traceId = idMap[lr.traceId];
+                                    } else {
+                                        var new_id = new_trace_id();
+                                        idMap[lr.traceId] = new_id;
+                                        lr.traceId = new_id;
+                                    }
+                                } else if (new_ids) {
+                                    if (idMap[lr.traceId]) {
+                                        lr.traceId = idMap[lr.traceId];
+                                    } else {
+                                        var new_id = new_trace_id();
+                                        idMap[lr.traceId] = new_id;
+                                        lr.traceId = new_id;
+                                    }
+                                }
                             }
-                            else if (logTimeNano < curr_time) {
-                                const newLogTime = curr_time + logTimeNano;
-                                lr.timeUnixNano = newLogTime.toString();
-                                lr.observedTimeUnixNano = newLogTime.toString();
+                            if (lr.spanId) {
+                                if (lr.spanId.match(template_regex)) {
+                                    if (idMap[lr.spanId]) {
+                                        lr.spanId = idMap[lr.spanId];
+                                    } else {
+                                        var new_id = new_span_id();
+                                        idMap[lr.spanId] = new_id;
+                                        lr.spanId = new_id;
+                                    }
+                                } else if (new_ids) {
+                                    if (idMap[lr.spanId]) {
+                                        lr.spanId = idMap[lr.spanId];
+                                    } else {
+                                        var new_id = new_span_id();
+                                        idMap[lr.spanId] = new_id;
+                                        lr.spanId = new_id;
+                                    }
+                                }
                             }
                         });
                     }
@@ -143,12 +175,6 @@ function apply_log_template(json, new_ids = false, strip_time = false, idMap = {
             }
         });
         if (logs_with_time.length > 0) {
-            // sort the logs by timeUnixNano
-            logs_with_time.sort((a, b) => {
-                return Number(a.timeUnixNano) - Number(b.timeUnixNano);
-            });
-            // get the largest timeUnixNano
-            const largest_time = BigInt(logs_with_time[logs_with_time.length - 1].timeUnixNano);
             for (var i = 0; i < logs_with_time.length; i++) {
                 var new_time = curr_time - (largest_time - BigInt(logs_with_time[i].timeUnixNano));
                 logs_with_time[i].timeUnixNano = new_time.toString();
@@ -159,25 +185,19 @@ function apply_log_template(json, new_ids = false, strip_time = false, idMap = {
     return json;
 }
 
-function apply_datapoint_template(datapoints, curr_time, strip_time, datapoints_with_time, idMap = {}) {
+function apply_datapoint_template(datapoints, curr_time, strip_time, datapoints_with_time) {
     if(datapoints) {
         datapoints.forEach(dp => {
             const dataPointTimeNano = BigInt(dp.timeUnixNano);
-            if (strip_time) {
+            if (strip_time || dataPointTimeNano < curr_time) {
                 datapoints_with_time.push(dp);
-            }
-            else if (dataPointTimeNano < curr_time) {
-                const newDataPointTime = curr_time + dataPointTimeNano;
-                dp.timeUnixNano = newDataPointTime.toString();
-                dp.startTimeUnixNano = newDataPointTime.toString();
             }
         });
     }
 }
 
-function apply_metric_template(json, new_ids = false, strip_time = false, idMap = {}) {
+function apply_metric_template(json, new_ids = false, strip_time = false, idMap, curr_time, largest_time) {
     if (json.resourceMetrics) {
-        const curr_time = BigInt(Date.now()) * BigInt(1000000);
         var datapoints_with_time = [];
         json.resourceMetrics.forEach(rm => {
             if (rm.scopeMetrics) {
@@ -190,11 +210,9 @@ function apply_metric_template(json, new_ids = false, strip_time = false, idMap 
                             if (m.gauge) {
                                 apply_datapoint_template(m.gauge.dataPoints, curr_time, strip_time,datapoints_with_time, idMap);
                             }
-
                             if (m.histogram) {
                                 apply_datapoint_template(m.histogram.dataPoints, curr_time, strip_time, datapoints_with_time, idMap);
                             }
-
                             if (m.exponentialHistogram) {
                                 apply_datapoint_template(m.exponentialHistogram.dataPoints, curr_time, strip_time, datapoints_with_time, idMap);
                             }
@@ -204,12 +222,6 @@ function apply_metric_template(json, new_ids = false, strip_time = false, idMap 
             }
         });
         if (datapoints_with_time.length > 0) {
-            // sort the datapoints by timeUnixNano
-            datapoints_with_time.sort((a, b) => {
-                return Number(a.timeUnixNano) - Number(b.timeUnixNano);
-            });
-            // get the largest timeUnixNano
-            const largest_time = BigInt(datapoints_with_time[datapoints_with_time.length - 1].timeUnixNano);
             for (var i = 0; i < datapoints_with_time.length; i++) {
                 var new_time = curr_time - (largest_time - BigInt(datapoints_with_time[i].timeUnixNano));
                 datapoints_with_time[i].timeUnixNano = new_time.toString();
@@ -225,17 +237,19 @@ const template_regex = /\{\{.*?\}\}/g;
 
 // apply template rules to the json object, and return the new json object
 function apply_template(json, new_ids = false, strip_time = false) {
+    const curr_time = BigInt(Date.now()) * BigInt(1000000);
     var idMap = {};
+    const largest_time = find_largest_time(json);       // need to calculate the relative time for re-time
     if (Array.isArray(json)) {
         json.forEach(item => {
-            apply_trace_template(item, new_ids, strip_time, idMap);
-            apply_log_template(item, new_ids, strip_time, idMap);
-            apply_metric_template(item, new_ids, strip_time, idMap);
+            apply_trace_template(item, new_ids, strip_time, idMap, curr_time, largest_time);
+            apply_log_template(item, new_ids, strip_time, idMap, curr_time, largest_time);
+            apply_metric_template(item, new_ids, strip_time, idMap, curr_time, largest_time);
         });
     } else {
-        apply_trace_template(json, new_ids, strip_time, idMap);
-        apply_log_template(json, new_ids, strip_time, idMap);
-        apply_metric_template(json, new_ids, strip_time, idMap);
+        apply_trace_template(json, new_ids, strip_time, idMap, curr_time, largest_time);
+        apply_log_template(json, new_ids, strip_time, idMap, curr_time, largest_time);
+        apply_metric_template(json, new_ids, strip_time, idMap, curr_time, largest_time);
     }
     return json;
 }
@@ -268,6 +282,19 @@ function init_template() {
                 .then(response => response.json())
                 .then(json => {
                     //document.getElementById('otel_input').textContent = JSON.stringify(json, null, 2);
+                    otelcol_json_input.setValue(JSON.stringify(json, null, 2));
+                })
+                .catch(error => console.error('Error fetching otelcol config:', error));
+        }
+    }, { passive: true});
+
+    document.getElementById("trace_log_combo").addEventListener("click", () => {
+        // load up the simple trace json into the text area 'otel_input'
+        if(template_dir) {
+            fetch('/api/get_json?path=' + template_dir + "/combo_trace_log.json")
+                .then(response => response.json())
+                .then(json => {
+                    //document.getElementById('otel_input').textContent = JSON.stringify(json, null, 2);    
                     otelcol_json_input.setValue(JSON.stringify(json, null, 2));
                 })
                 .catch(error => console.error('Error fetching otelcol config:', error));

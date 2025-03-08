@@ -97,7 +97,7 @@
               "parentSpanId": "{{span.2}}",
               "name": "test span - grandchild",
               "startTimeUnixNano": "1500000",
-              "endTimeUnixNano": "1500000",
+              "endTimeUnixNano": "3500000",
               "kind": 2,
               "attributes": [
                 {
