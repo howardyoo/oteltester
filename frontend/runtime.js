@@ -598,6 +598,10 @@ async function init_page() {
             {
                 "role": "system",
                 "content": `Here is an example of the LOG JSON data that you can use to generate the next JSON data in case user wants to generate a log: \`\`\`json|n${otel_example_log}\`\`\``
+            },
+            {
+                "role": "system",
+                "content": `Here is an example of the TRACE LOG JSON data that you can use to generate the next JSON data in case user wants to generate a trace with log: \`\`\`json|n${otel_example_trace_log}\`\`\``
             }
         ],
         (id_prefix)=>{

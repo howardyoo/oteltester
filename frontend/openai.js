@@ -612,3 +612,160 @@ const otel_example_log = `
   ]
 }
 `;
+
+const otel_example_trace_log = `
+[
+  {
+    "resourceSpans": [
+      {
+        "resource": {
+          "attributes": [
+            {
+              "key": "service.name",
+              "value": {
+                "stringValue": "test.service"
+              }
+            }
+          ]
+        },
+        "scopeSpans": [
+          {
+            "scope": {
+              "name": "test.library",
+              "version": "1.0.0",
+              "attributes": [
+                {
+                  "key": "test.scope.attribute",
+                  "value": {
+                    "stringValue": "some scope attribute"
+                  }
+                }
+              ]
+            },
+            "spans": [
+              {
+                "traceId": "{{trace.1}}",
+                "spanId": "{{span.1}}",
+                "parentSpanId": "",
+                "name": "test span",
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "4000000",
+                "kind": 2,
+                "attributes": [
+                  {
+                    "key": "test.span.attr",
+                    "value": {
+                      "stringValue": "this is a test value"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "resourceLogs": [
+      {
+        "resource": {
+          "attributes": [
+            {
+              "key": "service.name",
+              "value": {
+                "stringValue": "test.service"
+              }
+            }
+          ]
+        },
+        "scopeLogs": [
+          {
+            "scope": {
+              "name": "test.library",
+              "version": "1.0.0",
+              "attributes": [
+                {
+                  "key": "test.scope.attribute",
+                  "value": {
+                    "stringValue": "some scope attribute"
+                  }
+                }
+              ]
+            },
+            "logRecords": [
+              {
+                "timeUnixNano": "2000000",
+                "observedTimeUnixNano": "2100000",
+                "severityNumber": 10,
+                "severityText": "Information",
+                "traceId": "{{trace.1}}",
+                "spanId": "{{span.1}}",
+                "body": {
+                  "stringValue": "Example log record which is associated with a span"
+                },
+                "attributes": [
+                  {
+                    "key": "string.attribute",
+                    "value": {
+                      "stringValue": "some string"
+                    }
+                  },
+                  {
+                    "key": "boolean.attribute",
+                    "value": {
+                      "boolValue": true
+                    }
+                  },
+                  {
+                    "key": "int.attribute",
+                    "value": {
+                      "intValue": "10"
+                    }
+                  },
+                  {
+                    "key": "double.attribute",
+                    "value": {
+                      "doubleValue": 637.704
+                    }
+                  },
+                  {
+                    "key": "array.attribute",
+                    "value": {
+                      "arrayValue": {
+                        "values": [
+                          {
+                            "stringValue": "many"
+                          },
+                          {
+                            "stringValue": "values"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "key": "map.attribute",
+                    "value": {
+                      "kvlistValue": {
+                        "values": [
+                          {
+                            "key": "some.map.key",
+                            "value": {
+                              "stringValue": "some value"
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]
+`;
