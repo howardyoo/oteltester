@@ -49,11 +49,11 @@
              * init part
              */
              init_input_openai(`otelcol_${section_name}_openai_section`, section_name, [
-            {
+             {
                 "role": "system",
                 "content": `You are a helpful assistant that generates OpenTelemetry Collector configuration. 
-                You will be given the current configuration and you will need to generate the next configuration.
-                You are to output the YAML data only, nothing else. Do not include any other text or comments. enclose the YAML data in \`\`\` and \`\`\` tags.`
+                You will be given the current configuration and you will need to generate the snippet for ${section_name} only.
+                You are to output the snippet of YAML data only, nothing else. Do not include any other text or comments. enclose the YAML data in \`\`\` and \`\`\` tags.`
             }
             ],
             (id_prefix)=>{
