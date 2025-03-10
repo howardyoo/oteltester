@@ -82,31 +82,26 @@
       <div class="template-section">
       <div>
         <h3>🐾 Traces</h3>
-        <div class="template-buttons">
-          <input type="button" id="trace_simple" value="Simple Trace"/>
-          <input type="button" id="trace_medium" value="Medium Trace"/>
-          <input type="button" id="trace_log_combo" value="Trace and Log Combo"/>
-          <input type="button" id="trace_import" value="Import..."/>
+        <div class="button-list">
+          <button id="trace_simple">Simple Trace</button><button id="trace_medium">Medium Trace</button><button id="trace_log_combo">Trace and Log Combo</button>
         </div>
       </div>
       <div>
         <h3>📈 Metrics</h3>
-        <div class="template-buttons">
-          <input type="button" id="metric_simple" value="Simple Metric"/>
-          <input type="button" id="metric_import" value="Import..."/>
+        <div class="button-list">
+          <button id="metric_simple">Simple Metric</button>
         </div>
       </div>
       <div>
         <h3>🪵 Logs</h3>
-        <div class="template-buttons">
-          <input type="button" id="log_simple" value="Simple Log"/>
-          <input type="button" id="log_import" value="Import..."/>
+        <div class="button-list">
+          <button id="log_simple">Simple Log</button>
         </div>
       </div>
     </div>
     <div class="template-section-50">
       <div>
-        <h3>📝 OTEL Input</h3>
+        <h3>📝 OTEL Input <button class="header-button" id="otel_input_clear">Clear</button><button class="header-button" id="otel_input_save">Save</button><button class="header-button" id="otel_input_open">Open</button></h3>
         <textarea id="otel_input" rows="20" cols="80"></textarea>
         <form><div class="template-buttons">
           📡
@@ -118,7 +113,6 @@
           API Key <input type='password' id='otel_input_send_apikey' placeholder='API Key' autocomplete='off' value='1234567890'/>
           <input type="button" id="otel_input_send" value="⏵ Send"/>
           Inputs <select id='otel_inputs'></select>
-          <input type="button" id="otel_input_clear" value="Clear"/>
         </div>
         <div class="template-buttons">
           New trace and span id <input type="checkbox" id="otel_input_new_trace_span_id" name="otel_input_new_trace_span_id" checked/>
@@ -147,6 +141,7 @@
   <script src="runtime.js"></script>
   <script src="template.js"></script>
   <script src="otelbin.js"></script>
+  <script src="dialog.js"></script>
   </div>
 </body>
 </html>

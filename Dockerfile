@@ -16,6 +16,7 @@ FROM base AS derived
 WORKDIR /app
 # copy everything excluding node_modules
 RUN mkdir runtime
+RUN mkdir saved
 COPY backend ./backend
 COPY frontend ./frontend
 COPY certs ./certs

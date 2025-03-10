@@ -257,8 +257,8 @@ function refresh_main() {
       otelcol_html += "<div><h4>⚙️ " + otel_collector.config_path + "</h4>";
       otelcol_html += "<textarea id='otelcol_config' rows='20' cols='80'></textarea></div></div>";
       otelcol_html += "<div class='template-section-50'>";
-      otelcol_html += "<div><h4>🖥️ Console Output</h4><textarea id='otelcol_output' rows='20' cols='80'></textarea></div>";
-      otelcol_html += "<div><h4>📢 Otelcol Result</h4>";
+      otelcol_html += "<div><h4>🖥️ Console Output <button class='header-button' id='otelcol_output_clear'>Clear</button></h4><textarea id='otelcol_output' rows='20' cols='80'></textarea></div>";
+      otelcol_html += "<div><h4>📢 Otelcol Result <button class='header-button' id='otelcol_result_clear'>Clear</button></h4>";
       otelcol_html += "<textarea id='otelcol_result' rows='20' cols='80'></textarea>";
       otelcol_html += "<form><div class='template-buttons'> 📡 <select id='otelcol_send_endpoint'>";
       otelcol_html += "<option value='http://localhost:8080' selected='true'>Local refinery</option>";
@@ -315,11 +315,11 @@ function refresh_main() {
       refinery_html += "<div><h4>📏 " + refinery.rule_path + "</h4>";
       refinery_html += "<textarea id='refinery_rule' rows='20' cols='80'></textarea></div>";
 
-      refinery_html += "<div><h4>🖥️ Console Output</h4><textarea id='refinery_output' rows='20' cols='80'></textarea></div></div>";
+      refinery_html += "<div><h4>🖥️ Console Output <button class='header-button' id='refinery_output_clear'>Clear</button></h4><textarea id='refinery_output' rows='20' cols='80'></textarea></div></div>";
       refinery_html += "<div class='template-section-50'>";
       refinery_html += "<div><h4>⚙️ " + refinery.config_path + "</h4>";
       refinery_html += "<textarea id='refinery_config' rows='20' cols='80'></textarea></div>"
-      refinery_html += "<div><h4>📢 Refinery Result</h4>";
+      refinery_html += "<div><h4>📢 Refinery Result <button class='header-button' id='refinery_result_clear'>Clear</button></h4>";
       refinery_html += "<textarea id='refinery_sample_result' rows='20' cols='80'></textarea>"
       refinery_html += "<form style='display: none'><div class='template-buttons'> 📡 <select id='refinery_send_endpoint'>";
       refinery_html += "<option value='https://api.honeycomb.io'>https://api.honeycomb.io</option>";

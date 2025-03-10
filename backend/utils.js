@@ -74,7 +74,7 @@ export function read_yaml(path) {
 
 // function to save json file to the given path
 export function save_json(path, json) {
-    fs.writeFileSync(path, JSON.stringify(json));
+    fs.writeFileSync(path, JSON.stringify(json, null, 2));
 }
 
 // function to read yaml from the given URL

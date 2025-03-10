@@ -15,6 +15,7 @@ import zstd from "fast-zstd";
 import { marked } from "marked";
 import dotenvFlow from "dotenv-flow";
 import { OpenAI } from "openai";
+import { readdirSync } from "fs";
 
 // load the environment variables (automatically loads .env.local, .env, and .env.development)
 dotenvFlow.config();
@@ -570,6 +571,45 @@ app.post("/api/send_json", async (req, res) => {
       res.status(500).json({error: true, message: "❌ Failed to send json"});
     });
   }
+});
+
+// list the saved json files in the saved directory
+// response output in json format
+app.get("/api/list_saved_json", (req, res) => {
+  var config = get_config();
+  // read only *.json files
+  var files = readdirSync(config.work_dir + "/saved");
+  var json_files = files.filter(file => file.endsWith(".json"));
+  // remove the .json extension from the file name
+  json_files = json_files.map(file => file.replace(".json", ""));
+  res.json(json_files);
+});
+
+/**
+ * get the saved json file.
+ * the file name is given in the query parameter.
+ * Please omit the extension json from the file name.
+ */
+app.get("/api/get_saved_json", (req, res) => {
+  var config = get_config();
+  var file = req.query["name"];
+  var json = read_json(config.work_dir + "/saved/" + file + ".json");
+  res.json(json);
+});
+
+/**
+ * save the json data to the saved json file.
+ * the file name is given in the query parameter.
+ * Please omit the extension json from the file name.
+ */
+app.post("/api/save_saved_json", (req, res) => {
+  var config = get_config();
+  var file = req.query["name"];
+  // remove the blank spaces from the file name, with '_'
+  file = file.replace(/\s+/g, '_').trim();
+  var json = req.body;
+  save_json(config.work_dir + "/saved/" + file + ".json", JSON.parse(json));
+  res.json({message: "JSON data saved successfully"});
 });
 
 // retrieve the pids of running

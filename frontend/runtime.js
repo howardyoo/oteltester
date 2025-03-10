@@ -420,6 +420,7 @@ async function init_page() {
 
                 init_template();
                 init_textareas();
+                init_dialog();
 
                 if(collector_installed) {
                     document.getElementById("otelcol_install_status").innerText = "🟢 Installed";
@@ -776,11 +777,21 @@ async function init_page() {
             }, { passive: true});
 
             document.getElementById("refinery_clear").addEventListener("click", event => {
-                console.log("Clearing... refinery outputs");
+                console.log("Clearing... refinery outputs and results");
                 // document.getElementById("refinery_output").value = "";
                 // document.getElementById("refinery_sample_result").value = "";
                 refinery_output.setValue("");
                 refinery_sample_result.setValue("");
+            }, { passive: true});
+
+            document.getElementById("refinery_result_clear").addEventListener("click", event => {
+                console.log("Clearing... refinery result outputs");
+                refinery_sample_result.setValue("");
+            }, { passive: true});
+
+            document.getElementById("refinery_output_clear").addEventListener("click", event => {
+                console.log("Clearing... refinery outputs");
+                refinery_output.setValue("");
             }, { passive: true});
 
             // clear button for otel input
@@ -796,11 +807,27 @@ async function init_page() {
 
             // clear button for otel collector result
             document.getElementById("otelcol_clear").addEventListener("click", event => {
-                console.log("Clearing... otel collector outputs");
+                console.log("Clearing... otel collector and result outputs");
                 // document.getElementById("otelcol_output").value = "";
                 // document.getElementById("otelcol_result").value = "";
                 otelcol_json_output.setValue("");
                 otelcol_output.setValue("");
+                current_result = -1;
+                // clear the result cache
+                var select = document.getElementById("otelcol_results");
+                select.innerHTML = "";
+            }, { passive: true});
+
+            // clear button for otel collector output
+            document.getElementById("otelcol_output_clear").addEventListener("click", event => {
+                console.log("Clearing... otel collector outputs");
+                otelcol_output.setValue("");
+            }, { passive: true});
+
+            // clear button for otel collector result   
+            document.getElementById("otelcol_result_clear").addEventListener("click", event => {
+                console.log("Clearing... otel collector result outputs");
+                otelcol_json_output.setValue("");
                 current_result = -1;
                 // clear the result cache
                 var select = document.getElementById("otelcol_results");
