@@ -142,7 +142,12 @@ function set_open_dialog() {
                 open_dialog_content.innerHTML = "<p>No saved OTEL data found.</p>";
             }
             data.forEach(file => {
-                var button = document.createElement("button");
+                var button_container = document.createElement("span");
+                button_container.className = "button-container";
+                var button = document.createElement("div");
+                button.style.marginRight = "10px";
+                button.style.width = "100%";
+                button.className = "button";
                 button.innerText = file;
                 button.addEventListener("click", function() {
                     fetch("/api/get_saved_json?name=" + file)
@@ -153,7 +158,24 @@ function set_open_dialog() {
                             close_dialog();
                         });
                 });
-                open_dialog_content.appendChild(button);
+                var delete_button = document.createElement("span");
+                delete_button.innerText = "✕";
+                delete_button.className = "delete-button";
+                delete_button.addEventListener("click", function() {
+                    // perform the deletion.
+                    fetch("/api/delete_saved_json?name=" + file)
+                        .then(response => response.json())
+                        .then(data => {
+                            if(data.message === "JSON data deleted successfully") {
+                                open_dialog(create_dialog("Success", "The saved OTEL data has been deleted.", "OK"));
+                            } else {
+                                open_dialog(create_dialog("Error", "Failed to delete the saved OTEL data.", "OK"));
+                            }
+                        });
+                });
+                button_container.appendChild(button);
+                button_container.appendChild(delete_button);
+                open_dialog_content.appendChild(button_container);
             });
             var otel_open_dialog = create_dialog("Open OTEL Input", open_dialog_content, null);
             open_dialog(otel_open_dialog);

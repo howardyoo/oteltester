@@ -310,6 +310,10 @@ pre {
   word-wrap: break-word;       /* Internet Explorer 5.5+ */
 }
 
+.button:hover {
+  cursor: pointer;
+}
+
 /* css for dialogs */
 .dialog-container {
   position: fixed;
@@ -341,6 +345,26 @@ pre {
   border-radius: 10px;
   margin-right: 5px;
   cursor: pointer;
+}
+
+.dialog-container .button-container {
+  display: flex;
+  background-color: #1890ff;
+  color: white;
+  border: none;
+  padding: 5px;
+  padding-left: 10px;
+  padding-right: 10px;
+  font-size: 1.0em;
+  border-radius: 10px;
+  margin-right: 5px;
+  margin-top: 5px;
+  cursor: pointer;
+}
+
+/* align to the right */
+.delete-button {
+  float: right;
 }
 
 .open-dialog-content {

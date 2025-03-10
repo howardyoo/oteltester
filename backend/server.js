@@ -15,7 +15,7 @@ import zstd from "fast-zstd";
 import { marked } from "marked";
 import dotenvFlow from "dotenv-flow";
 import { OpenAI } from "openai";
-import { readdirSync } from "fs";
+import { readdirSync, unlinkSync } from "fs";
 
 // load the environment variables (automatically loads .env.local, .env, and .env.development)
 dotenvFlow.config();
@@ -592,9 +592,21 @@ app.get("/api/list_saved_json", (req, res) => {
  */
 app.get("/api/get_saved_json", (req, res) => {
   var config = get_config();
-  var file = req.query["name"];
+  var file = req.query["name"].replace("..", "");
   var json = read_json(config.work_dir + "/saved/" + file + ".json");
   res.json(json);
+});
+
+/**
+ * delete the saved json file.
+ * the file name is given in the query parameter.
+ * Please omit the extension json from the file name.
+ */
+app.get("/api/delete_saved_json", (req, res) => {
+  var config = get_config();
+  var file = req.query["name"].replace("..", "");
+  unlinkSync(config.work_dir + "/saved/" + file + ".json");
+  res.json({message: "JSON data deleted successfully"});
 });
 
 /**
@@ -604,7 +616,7 @@ app.get("/api/get_saved_json", (req, res) => {
  */
 app.post("/api/save_saved_json", (req, res) => {
   var config = get_config();
-  var file = req.query["name"];
+  var file = req.query["name"].replace("..", "");
   // remove the blank spaces from the file name, with '_'
   file = file.replace(/\s+/g, '_').trim();
   var json = req.body;
