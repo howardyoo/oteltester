@@ -125,7 +125,13 @@
                     "type": "object",
                     "properties": {
                       "key": { "type": "string" },
-                      "value": { "type": "object" }
+                      "value": {
+                        "type": "object",
+                        "properties": {
+                          "stringValue": { "type": "string" }
+                        },
+                        "required": ["stringValue"]
+                      }
                     },
                     "required": ["key", "value"]
                   }
@@ -141,9 +147,27 @@
                   "scope": {
                     "type": "object",
                     "properties": {
-                      "name": { "type": "string" }
+                      "name": { "type": "string" },
+                      "version": { "type": "string" },
+                      "attributes": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "key": { "type": "string" },
+                            "value": {
+                              "type": "object",
+                              "properties": {
+                                "stringValue": { "type": "string" }
+                              },
+                              "required": ["stringValue"]
+                            }
+                          },
+                          "required": ["key", "value"]
+                        }
+                      }
                     },
-                    "required": ["name"]
+                    "required": ["name", "version"]
                   },
                   "metrics": {
                     "type": "array",
@@ -153,9 +177,179 @@
                         "name": { "type": "string" },
                         "unit": { "type": "string" },
                         "description": { "type": "string" },
-                        "data": { "type": "object" }
+                        "sum": {
+                          "type": "object",
+                          "properties": {
+                            "aggregationTemporality": { "type": "integer" },
+                            "isMonotonic": { "type": "boolean" },
+                            "dataPoints": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "asDouble": { "type": "number" },
+                                  "startTimeUnixNano": { "type": "string" },
+                                  "timeUnixNano": { "type": "string" },
+                                  "attributes": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "key": { "type": "string" },
+                                        "value": {
+                                          "type": "object",
+                                          "properties": {
+                                            "stringValue": { "type": "string" }
+                                          },
+                                          "required": ["stringValue"]
+                                        }
+                                      },
+                                      "required": ["key", "value"]
+                                    }
+                                  }
+                                },
+                                "required": ["startTimeUnixNano", "timeUnixNano"]
+                              }
+                            }
+                          },
+                          "required": ["dataPoints"]
+                        },
+                        "gauge": {
+                          "type": "object",
+                          "properties": {
+                            "dataPoints": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "asDouble": { "type": "number" },
+                                  "timeUnixNano": { "type": "string" },
+                                  "attributes": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "key": { "type": "string" },
+                                        "value": {
+                                          "type": "object",
+                                          "properties": {
+                                            "stringValue": { "type": "string" }
+                                          },
+                                          "required": ["stringValue"]
+                                        }
+                                      },
+                                      "required": ["key", "value"]
+                                    }
+                                  }
+                                },
+                                "required": ["timeUnixNano"]
+                              }
+                            }
+                          },
+                          "required": ["dataPoints"]
+                        },
+                        "histogram": {
+                          "type": "object",
+                          "properties": {
+                            "aggregationTemporality": { "type": "integer" },
+                            "dataPoints": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "startTimeUnixNano": { "type": "string" },
+                                  "timeUnixNano": { "type": "string" },
+                                  "count": { "type": "integer" },
+                                  "sum": { "type": "number" },
+                                  "bucketCounts": {
+                                    "type": "array",
+                                    "items": { "type": "integer" }
+                                  },
+                                  "explicitBounds": {
+                                    "type": "array",
+                                    "items": { "type": "number" }
+                                  },
+                                  "min": { "type": "number" },
+                                  "max": { "type": "number" },
+                                  "attributes": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "key": { "type": "string" },
+                                        "value": {
+                                          "type": "object",
+                                          "properties": {
+                                            "stringValue": { "type": "string" }
+                                          },
+                                          "required": ["stringValue"]
+                                        }
+                                      },
+                                      "required": ["key", "value"]
+                                    }
+                                  }
+                                },
+                                "required": ["startTimeUnixNano", "timeUnixNano", "count", "sum", "bucketCounts", "explicitBounds", "min", "max"]
+                              }
+                            }
+                          },
+                          "required": ["dataPoints"]
+                        },
+                        "exponentialHistogram": {
+                          "type": "object",
+                          "properties": {
+                            "aggregationTemporality": { "type": "integer" },
+                            "dataPoints": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "startTimeUnixNano": { "type": "string" },
+                                  "timeUnixNano": { "type": "string" },
+                                  "count": { "type": "integer" },
+                                  "sum": { "type": "number" },
+                                  "scale": { "type": "integer" },
+                                  "zeroCount": { "type": "integer" },
+                                  "positive": {
+                                    "type": "object",
+                                    "properties": {
+                                      "offset": { "type": "integer" },
+                                      "bucketCounts": {
+                                        "type": "array",
+                                        "items": { "type": "integer" }
+                                      }
+                                    },
+                                    "required": ["offset", "bucketCounts"]
+                                  },
+                                  "min": { "type": "number" },
+                                  "max": { "type": "number" },
+                                  "zeroThreshold": { "type": "number" },
+                                  "attributes": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "key": { "type": "string" },
+                                        "value": {
+                                          "type": "object",
+                                          "properties": {
+                                            "stringValue": { "type": "string" }
+                                          },
+                                          "required": ["stringValue"]
+                                        }
+                                      },
+                                      "required": ["key", "value"]
+                                    }
+                                  }
+                                },
+                                "required": ["startTimeUnixNano", "timeUnixNano", "count", "sum", "scale", "zeroCount", "positive", "min", "max", "zeroThreshold"]
+                              }
+                            }
+                          },
+                          "required": ["dataPoints"]
+                        }
                       },
-                      "required": ["name", "data"]
+                      "required": ["name", "unit", "description"]
                     }
                   }
                 },
