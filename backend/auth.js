@@ -11,8 +11,10 @@ const auth = (req, res, next) => {
   // if the request is from localhost, no need to perform authentication
   // get the request's client 
   const agent = req.headers['user-agent'];
-  const ip = req.ip || req.connection.remoteAddress;
-  if( (ip === '127.0.0.1' || ip === '::1' || ip === 'localhost') && ( agent && agent.startsWith('OpenTelemetry Collector'))) {
+  const clientIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+  const isLocal = clientIp.startsWith('127.') || clientIp.startsWith('192.168.') || clientIp.startsWith('10.') || clientIp.startsWith('::1');
+
+  if( (isLocal) && ( agent && agent.startsWith('OpenTelemetry Collector'))) {
     return next();
   }
 
