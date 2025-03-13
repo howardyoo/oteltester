@@ -90,6 +90,15 @@ To stop the application, run the following command:
 ```
 - When user sends this message, Tester will iterate through the array and process each element as a separate message, and submit them to the collector in order of appearance.
 - ⚠️ Note, however, that this message is NOT a valid OTEL JSON message format.
+- There is another way you can send messages in a single JSON.
+```JSON
+{
+  "resourceTrace": {...},
+  "resourceMetric": {...},
+  "resourceLog": {...}
+}
+```
+- This method is also supported. However, note that this is not a VALID OTEL JSON format.
 
 ## How to set time for the data
 - Often times, it is not useful to use what was contained inside the OTEL JSON data's timestamps (which is in UNIX nano seconds).

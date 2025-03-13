@@ -1,0 +1,171 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+      "resourceSpans": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "resource": {
+              "type": "object",
+              "properties": {
+                "attributes": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "key": { "type": "string" },
+                      "value": { "type": "object" }
+                    },
+                    "required": ["key", "value"]
+                  }
+                }
+              },
+              "required": ["attributes"]
+            },
+            "scopeSpans": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "scope": {
+                    "type": "object",
+                    "properties": {
+                      "name": { "type": "string" }
+                    },
+                    "required": ["name"]
+                  },
+                  "spans": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "traceId": { "type": "string" },
+                        "spanId": { "type": "string" },
+                        "name": { "type": "string" },
+                        "kind": { "type": "integer" }
+                      },
+                      "required": ["traceId", "spanId", "name", "kind"]
+                    }
+                  }
+                },
+                "required": ["scope", "spans"]
+              }
+            }
+          },
+          "required": ["resource", "scopeSpans"]
+        }
+      },
+      "resourceLogs": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "resource": {
+              "type": "object",
+              "properties": {
+                "attributes": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "key": { "type": "string" },
+                      "value": { "type": "object" }
+                    },
+                    "required": ["key", "value"]
+                  }
+                }
+              },
+              "required": ["attributes"]
+            },
+            "scopeLogs": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "scope": {
+                    "type": "object",
+                    "properties": {
+                      "name": { "type": "string" }
+                    },
+                    "required": ["name"]
+                  },
+                  "logRecords": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "timeUnixNano": { "type": "string" },
+                        "severityText": { "type": "string" },
+                        "body": { "type": "object" }
+                      },
+                      "required": ["timeUnixNano", "severityText", "body"]
+                    }
+                  }
+                },
+                "required": ["scope", "logRecords"]
+              }
+            }
+          },
+          "required": ["resource", "scopeLogs"]
+        }
+      },
+      "resourceMetrics": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "resource": {
+              "type": "object",
+              "properties": {
+                "attributes": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "key": { "type": "string" },
+                      "value": { "type": "object" }
+                    },
+                    "required": ["key", "value"]
+                  }
+                }
+              },
+              "required": ["attributes"]
+            },
+            "scopeMetrics": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "scope": {
+                    "type": "object",
+                    "properties": {
+                      "name": { "type": "string" }
+                    },
+                    "required": ["name"]
+                  },
+                  "metrics": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": { "type": "string" },
+                        "unit": { "type": "string" },
+                        "description": { "type": "string" },
+                        "data": { "type": "object" }
+                      },
+                      "required": ["name", "data"]
+                    }
+                  }
+                },
+                "required": ["scope", "metrics"]
+              }
+            }
+          },
+          "required": ["resource", "scopeMetrics"]
+        }
+      }
+    },
+    "required": []
+  }

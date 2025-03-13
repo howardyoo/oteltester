@@ -254,7 +254,7 @@ function refresh_main() {
       otelcol_html += "<input type='button' id='otelcol_extensions' value='▸ Extensions'></div>";
       otelcol_html += "<div id='otelcol_edit_section' class='template-section-100'></div>";
       otelcol_html += "<div class='template-section-100'>";
-      otelcol_html += "<div><h4>⚙️ " + otel_collector.config_path + "</h4>";
+      otelcol_html += "<div><h4>⚙️ " + otel_collector.config_path + " <span class='header-span'>Version <select id='otelcol_config_history'></select></span></h4>";
       otelcol_html += "<textarea id='otelcol_config' rows='20' cols='80'></textarea></div></div>";
       otelcol_html += "<div class='template-section-50'>";
       otelcol_html += "<div><h4>🖥️ Console Output <button class='header-button' id='otelcol_output_clear'>Clear</button></h4><textarea id='otelcol_output' rows='20' cols='80'></textarea></div>";
@@ -312,12 +312,12 @@ function refresh_main() {
       refinery_html += "<input type='button' id='refinery_clear' value='🧹 Clear Outputs'></div>";
       refinery_html += "<div class='template-section-50'>";
 
-      refinery_html += "<div><h4>📏 " + refinery.rule_path + "</h4>";
+      refinery_html += "<div><h4>📏 " + refinery.rule_path + " <span class='header-span'>Version <select id='refinery_rule_history'></select></span></h4>";
       refinery_html += "<textarea id='refinery_rule' rows='20' cols='80'></textarea></div>";
 
       refinery_html += "<div><h4>🖥️ Console Output <button class='header-button' id='refinery_output_clear'>Clear</button></h4><textarea id='refinery_output' rows='20' cols='80'></textarea></div></div>";
       refinery_html += "<div class='template-section-50'>";
-      refinery_html += "<div><h4>⚙️ " + refinery.config_path + "</h4>";
+      refinery_html += "<div><h4>⚙️ " + refinery.config_path + " <span class='header-span'>Version <select id='refinery_config_history'></select></span></h4>";
       refinery_html += "<textarea id='refinery_config' rows='20' cols='80'></textarea></div>"
       refinery_html += "<div><h4>📢 Refinery Result <button class='header-button' id='refinery_result_clear'>Clear</button></h4>";
       refinery_html += "<textarea id='refinery_sample_result' rows='20' cols='80'></textarea>"

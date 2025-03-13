@@ -28,7 +28,10 @@
     "marked":"^15.0.7",
     "openai":"^4.86.1",
     "dotenv":"^16.4.7",
-    "dotenv-flow":"^4.1.0"
+    "dotenv-flow":"^4.1.0",
+    "basic-auth":"^2.0.1",
+    "ajv":"^8.17.1",
+    "ajv-formats":"^3.0.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.9"

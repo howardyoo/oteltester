@@ -16,6 +16,15 @@ import { marked } from "marked";
 import dotenvFlow from "dotenv-flow";
 import { OpenAI } from "openai";
 import { readdirSync, unlinkSync } from "fs";
+import auth from "./auth.js";
+import Ajv from "ajv";
+import fs from "fs";
+
+// OTEL schema validator init.
+const schema = JSON.parse(fs.readFileSync("./backend/schema/otel-schema.json", "utf8"));
+const ajv = new Ajv({ allErrors: true});
+// compile schema
+const validate = ajv.compile(schema);
 
 // load the environment variables (automatically loads .env.local, .env, and .env.development)
 dotenvFlow.config();
@@ -32,13 +41,24 @@ app.use(express.json({limit: '10mb'}));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(express.text());
 app.use(compression());
-
+app.use(auth);
 // middleware to serve json payload as input
 httpsApp.use(express.static(path.join(WORK_DIR, "./frontend")));
 httpsApp.use(express.json({limit: '10mb'}));
 httpsApp.use(express.urlencoded({ limit: '10mb', extended: true }));
 httpsApp.use(express.text());
 httpsApp.use(compression());
+
+// function to validate otel json
+function validate_otel_json(json) {
+  const valid = validate(json);
+  if(!valid) {
+    console.error("Invalid OTEL JSON:" , validate.errors);
+    return false;
+  }
+  console.log("valid OTEL JSON");
+  return true;
+}
 
 // Backend API route
 app.get("/api/message", (req, res) => {
@@ -489,6 +509,96 @@ app.get("/api/otelcol_modules", async (req, res) => {
   res.json(response);
 });
 
+
+// internal function to send the otel json
+// returns the array of messages that contains the result of the operation
+async function send_otel_json(url, headers, json) {
+  // first, get the total number of resources
+  var total = 0;
+  var processed = 0;
+  if(json.resourceSpans) total++;
+  if(json.resourceMetrics) total++;
+  if(json.resourceLogs) total++;
+  var result = [];
+
+  if(total == 0) {
+    return {result: [{error: true, message: "No resourceSpans, resourceMetrics, or resourceLogs found"}], total: 0, processed: 0};
+  }
+
+  // then send the resource one by one.
+  if(json.resourceSpans) {
+    // create a new json object
+    var _json = {};
+    _json.resourceSpans = json.resourceSpans;
+    var url_to_use = url;
+    if ( !url.endsWith('/v1/traces') ) {
+      url_to_use += '/v1/traces';
+    }
+    if(validate_otel_json(_json)) {
+      const response = await fetch(url_to_use, {
+        method: 'POST',
+        body: JSON.stringify(_json),
+        headers: headers
+      });
+      if (response.status === 200) {
+        processed++;
+        result.push({error: false, message: "Traces sent successfully"});
+      } else {
+        result.push({error: true, message: "Failed to send traces", error_message: response.statusText});
+      }
+    } else {
+      result.push({error: true, message: "Invalid OTEL JSON", errors: validate.errors});
+    }
+  }
+  if(json.resourceMetrics) {
+    var _json = {};
+    _json.resourceMetrics = json.resourceMetrics;
+    var url_to_use = url;
+    if ( !url.endsWith('/v1/metrics') ) {
+      url_to_use += '/v1/metrics';
+    }
+    if(validate_otel_json(_json)) {
+      const response = await fetch(url_to_use, {
+        method: 'POST',
+        body: JSON.stringify(_json),
+        headers: headers
+      });
+      if (response.status === 200) {
+        processed++;
+        result.push({error: false, message: "Metrics sent successfully"});
+      } else {
+        result.push({error: true, message: "Failed to send metrics", error_message: response.statusText});
+      }
+    } else {
+      result.push({error: true, message: "Invalid OTEL JSON", errors: validate.errors});
+    }
+  }
+  if(json.resourceLogs) {
+    var _json = {};
+    _json.resourceLogs = json.resourceLogs;
+    var url_to_use = url;
+    if ( !url.endsWith('/v1/logs') ) {
+      url_to_use += '/v1/logs';
+    }
+    if(validate_otel_json(_json)) {
+      const response = await fetch(url_to_use, {
+        method: 'POST',
+        body: JSON.stringify(_json),
+        headers: headers
+      });
+    if (response.status === 200) {
+      processed++;
+      result.push({error: false, message: "Logs sent successfully"});
+    } else {
+      result.push({error: true, message: "Failed to send logs", error_message: response.statusText});
+    }
+    } else {
+      result.push({error: true, message: "Invalid OTEL JSON", errors: validate.errors});
+    }
+  }
+  return {result: result, total: total, processed: processed};
+}
+
 // get the json provided in the request body and submit it to 
 // the url given
 app.post("/api/send_json", async (req, res) => {
@@ -502,74 +612,38 @@ app.post("/api/send_json", async (req, res) => {
   
   if(Array.isArray(json)) {
     try {
-      var total = json.length;
+      var total = 0;
       var processed = 0;
+      var results = [];
       
       // Process each item sequentially
       for(var j of json) {
-        var url_to_use = url;
-        if ( j.resourceSpans ) {
-          if ( !url.endsWith('/v1/traces') ) {
-            url_to_use += '/v1/traces';
-          }
-        } else if ( j.resourceMetrics ) {
-          if ( !url.endsWith('/v1/metrics') ) {
-            url_to_use += '/v1/metrics';
-          }
-        } else if ( j.resourceLogs ) {
-          if ( !url.endsWith('/v1/logs') ) {
-            url_to_use += '/v1/logs';
-          }
-        }
-        console.log("send json url: " + url_to_use);
-        
-        // Wait for each request to complete before moving to the next
-        const response = await fetch(url_to_use, {
-          method: 'POST',
-          body: JSON.stringify(j),
-          headers: headers
-        });
-        
-        if (response.status === 200) {
-          processed++;
-        }
+        var result = await send_otel_json(url, headers, j);
+        total += result.total;
+        processed += result.processed;
+        // push array of results into result
+        results = results.concat(result.result);
       }
-      res.json({message: `✅ JSON sent successfully (${processed}/${total})`});
+      var status_icon = "✅";
+      if (processed > 0 && total > 0 && processed != total) {
+        status_icon = "⚠️";
+      }
+      if (processed == 0 && total == 0) {
+        status_icon = "❌";
+      }
+      res.json({message: `${status_icon} JSON sent: (${processed}/${total})`, result: results});
     } catch (error) {
       console.error('Error sending json:', error);
       res.status(500).json({error: true, message: "❌ Failed to send json"});
     }
   } else {
-    if ( json.resourceSpans ) {
-      if ( !url.endsWith('/v1/traces') ) {
-        url += '/v1/traces';
-      }
-    } else if ( json.resourceMetrics ) {
-      if ( !url.endsWith('/v1/metrics') ) {
-        url += '/v1/metrics';
-      }
-    } else if ( json.resourceLogs ) {
-      if ( !url.endsWith('/v1/logs') ) {
-        url += '/v1/logs';
-      }
-    }
-    console.log("send json url: " + url);
-    fetch(url, {
-      method: 'POST',
-      body: JSON.stringify(json),
-      headers: headers
-    })
-    .then(response => {
-      if (response.status === 200) {
-        res.json({message: "✅ JSON sent successfully"});
-      } else {
-        res.status(response.status).json({error: true,message: "❌ Failed to send json"});
-      }
-    })
-    .catch(error => {
+    try {
+      var results = await send_otel_json(url, headers, json);
+      res.json({message: `✅ JSON sent successfully (${results.processed}/${results.total})`, result: results.result});
+    } catch (error) {
       console.error('Error sending json:', error);
       res.status(500).json({error: true, message: "❌ Failed to send json"});
-    });
+    }
   }
 });
 

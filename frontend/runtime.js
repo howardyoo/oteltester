@@ -40,6 +40,12 @@ var refinery_version = "0.0.0";
 var current_result = -1;
 // currently selected item from input.
 var current_input = -1;
+// currently selected item from otelcol config history
+var current_otelcol_config = -1;
+// currently selected item from refinery config history
+var current_refinery_config = -1;
+// currently selected item from refinery rule history
+var current_refinery_rule = -1;
 
 // currently selected item from edit section
 var current_edit = null;
@@ -109,6 +115,51 @@ function append_otelcol_result(message) {
     select.selectedIndex = num_options;
     // return the request number
     current_result = num_options;
+    return option.text;
+}
+
+function append_otelcol_config_history(config) {
+    var select = document.getElementById("otelcol_config_history");
+    var option = document.createElement("option");
+    option.config = config;
+    var num_options = select.options.length;
+    option.text = num_options + 1;
+    select.appendChild(option);
+    // update the selected element
+    select.selectedIndex = num_options;
+    // return the request number
+    current_otelcol_config = num_options;
+    otelcol_config_current = config;
+    return option.text;
+}
+
+function append_refinery_config_history(config) {
+    var select = document.getElementById("refinery_config_history");
+    var option = document.createElement("option");
+    option.config = config;
+    var num_options = select.options.length;
+    option.text = num_options + 1;
+    select.appendChild(option);
+    // update the selected element
+    select.selectedIndex = num_options;
+    // return the request number
+    current_refinery_config = num_options;
+    refinery_config_current = config;
+    return option.text;
+}
+
+function append_refinery_rule_history(rule) {
+    var select = document.getElementById("refinery_rule_history");
+    var option = document.createElement("option");
+    option.rule = rule;
+    var num_options = select.options.length;
+    option.text = num_options + 1;
+    select.appendChild(option);
+    // update the selected element
+    select.selectedIndex = num_options;
+    // return the request number
+    current_refinery_rule = num_options;
+    refinery_rule_current = rule;
     return option.text;
 }
 
@@ -501,6 +552,30 @@ async function init_page() {
             current_result = selected_index;
         }, { passive: true});
 
+        document.getElementById("otelcol_config_history").addEventListener("change", (event) => {
+            var selected_index = event.target.selectedIndex;
+            var config = event.target.options[selected_index].config;
+            otelcol_editor.setValue(config);
+            otelcol_config_current = config;
+            document.getElementById("otelcol_save").disabled = false;
+        }, { passive: true});
+
+        document.getElementById("refinery_config_history").addEventListener("change", (event) => {
+            var selected_index = event.target.selectedIndex;
+            var config = event.target.options[selected_index].config;
+            refinery_editor.setValue(config);
+            refinery_config_current = config;
+            document.getElementById("refinery_save").disabled = false;
+        }, { passive: true});
+
+        document.getElementById("refinery_rule_history").addEventListener("change", (event) => {
+            var selected_index = event.target.selectedIndex;
+            var rule = event.target.options[selected_index].rule;
+            refinery_rule_editor.setValue(rule);
+            refinery_rule_current = rule;
+            document.getElementById("refinery_save").disabled = false;
+        }, { passive: true});
+
         document.getElementById("otelcol_install_cancel").addEventListener("click", () => {
             console.log("Cancelling... otel collector installation");
             // will send cancel signal to the web socket
@@ -731,7 +806,16 @@ async function init_page() {
                     .then(response => response.json())
                     .then(data => {
                         console.log(data.message);
-                        otelcol_config_current = config;
+                        if (current_otelcol_config != -1) {
+                            var config_history = document.getElementById("otelcol_config_history");
+                            var selected_index = config_history.selectedIndex;
+                            var _config = config_history.options[selected_index].config;
+                            if(_config != config) {
+                                append_otelcol_config_history(config);
+                            }
+                        } else {
+                            append_otelcol_config_history(config);
+                        }
                         document.getElementById("otelcol_save").disabled = true;
                     })
                     .catch(error => console.error('Error saving otelcol config:', error));
@@ -753,7 +837,16 @@ async function init_page() {
                     .then(response => response.json())
                     .then(data => {
                         console.log(data.message);
-                        refinery_config_current = config;
+                        if (current_refinery_config != -1) {
+                            var config_history = document.getElementById("refinery_config_history");
+                            var selected_index = config_history.selectedIndex;
+                            var _config = config_history.options[selected_index].config;
+                            if(_config != config) {
+                                append_refinery_config_history(config);
+                            }
+                        } else {
+                            append_refinery_config_history(config);
+                        }
                         document.getElementById("refinery_save").disabled = true;
                         // var rule = document.getElementById("refinery_rule").value;
                         var rule = refinery_rule_editor.getValue();
@@ -767,8 +860,17 @@ async function init_page() {
                         })
                         .then(response => response.json())
                         .then(data => {
-                            refinery_rule_current = rule;
                             console.log(data.message);
+                            if (current_refinery_rule != -1) {
+                                var rule_history = document.getElementById("refinery_rule_history");
+                                var selected_index = rule_history.selectedIndex;
+                                var _rule = rule_history.options[selected_index].rule;
+                                if(_rule != rule) {
+                                    append_refinery_rule_history(rule);
+                                }
+                            } else {
+                                append_refinery_rule_history(rule);
+                            }
                             document.getElementById("refinery_save").disabled = true;
                         })
                         .catch(error => console.error('Error saving refinery rule:', error));
@@ -847,12 +949,38 @@ async function init_page() {
             document.getElementById("otelcol_reload").addEventListener("click", event => {
                 console.log("Reloading... otel collector config");
                 var pid = document.getElementById("otelcol_stop").getAttribute("pid");
-                fetch('/api/refresh?pid=' + pid)
-                    .then(response => response.json())
-                    .then(data => {
-                        console.log(data.message);
-                    })
-                    .catch(error => console.error('Error reloading otelcol config:', error));
+
+                // call save first
+                var config = otelcol_editor.getValue();
+                fetch('/api/save_yaml?path=' + otel_collector.config_path, {
+                    method: 'POST',
+                    body: config,
+                    headers: {
+                        'Content-Type': 'text/plain'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data.message);
+                    // if config has changed, append the new config to the history
+                    if(current_otelcol_config != -1) {
+                        var _config = document.getElementById("otelcol_config_history").options[current_otelcol_config].config;
+                        if(_config != config) {
+                            append_otelcol_config_history(config);
+                        }
+                    } else {
+                        append_otelcol_config_history(config);
+                    }
+                    document.getElementById("otelcol_save").disabled = true;
+                    // now, reload the config
+                    fetch('/api/refresh?pid=' + pid)
+                        .then(response => response.json())
+                        .then(data => {
+                            console.log(data.message);
+                        })
+                        .catch(error => console.error('Error reloading otelcol config:', error));
+                })
+                .catch(error => console.error('Error saving otelcol config:', error));
             }, { passive: true});
 
             // send the json data to the endpoint in otel collector result
@@ -906,6 +1034,7 @@ async function init_page() {
                 .then(response => response.json()) 
                 .then(data => {
                     console.log(data.message);
+                    console.log(data.result);
                     document.getElementById("otel_input_send_status").innerHTML = data.message;
                 })
                 .catch(error => {
