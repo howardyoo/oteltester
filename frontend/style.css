@@ -58,12 +58,6 @@ div.status {
   color: gray;
 }
 
-#otel_input_send_status {
-  font-size: 12px;
-  margin-left: 10px;
-  color: gray;
-}
-
 .active {
   background-color: #1890ff;
   color: #ffffff;
@@ -100,6 +94,26 @@ body {
     padding-top: 5px;
     padding-bottom: 5px;
     font-size: 14px;
+  }
+
+  .red {
+    background-color: red !important;
+    color: white !important;
+  }
+
+  .green {
+    background-color: green !important;
+    color: white !important;
+  }
+
+  .blue {
+    background-color: blue !important;
+    color: white !important;
+  }
+
+  .yellow {
+    background-color: yellow !important;
+    color: black !important;
   }
 
   .header-span {
@@ -418,4 +432,29 @@ pre {
   height: 100%;
   background-color: rgba(0, 0, 0, 0.5);
   z-index: 999;
+}
+
+.validation-result {
+  padding: 15px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  margin: 5px;
+  font-size: 0.9em;
+}
+
+.validation-result h3 {
+  font-size: 1.2em;
+  font-weight: bold;
+  color: #000000;
+}
+
+.validation-result ul {
+  list-style-type: disc;
+  padding-left: 15px;
+}
+
+.validation-result h4 {
+  font-size: 1.0em;
+  font-weight: bold;
+  color: #000000;
 }

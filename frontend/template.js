@@ -93,9 +93,13 @@ function apply_trace_template(json, new_ids = false, strip_time = false, idMap, 
                                         span.parentSpanId = idMap[span.parentSpanId];
                                     }
                                 } else if (new_ids) {
-                                    var new_id = new_span_id();
-                                    idMap[span.parentSpanId] = new_id;
-                                    span.parentSpanId = new_id;
+                                    if (idMap[span.parentSpanId]) {
+                                        span.parentSpanId = idMap[span.parentSpanId];
+                                    } else {
+                                        var new_id = new_span_id();
+                                        idMap[span.parentSpanId] = new_id;
+                                        span.parentSpanId = new_id;
+                                    }
                                 }
                             }
                             const startTimeNano = BigInt(span.startTimeUnixNano);

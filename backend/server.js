@@ -529,71 +529,137 @@ async function send_otel_json(url, headers, json) {
   if(json.resourceSpans) {
     // create a new json object
     var _json = {};
+    var _result = {};
     _json.resourceSpans = json.resourceSpans;
     var url_to_use = url;
     if ( !url.endsWith('/v1/traces') ) {
       url_to_use += '/v1/traces';
     }
     if(validate_otel_json(_json)) {
-      const response = await fetch(url_to_use, {
-        method: 'POST',
-        body: JSON.stringify(_json),
-        headers: headers
-      });
-      if (response.status === 200) {
-        processed++;
-        result.push({error: false, message: "Traces sent successfully"});
-      } else {
-        result.push({error: true, message: "Failed to send traces", error_message: response.statusText});
+      _result['validation'] = true;
+      try {
+        const response = await fetch(url_to_use, {
+          method: 'POST',
+          body: JSON.stringify(_json),
+          headers: headers
+        });
+        if (response.status === 200) {
+          processed++;
+          _result['error'] = false;
+          _result['sent'] = true;
+          _result['message'] = "Traces sent successfully";
+          result.push(_result);
+        } else {
+          _result['error'] = true;
+          _result['sent'] = false;
+          _result['message'] = "Failed to send traces";
+          _result['error_message'] = response.statusText;
+          result.push(_result);
+        }
+      } catch (err) {
+        _result['sent'] = false;
+        _result['error'] = true;
+        _result['message'] = "Failed to send traces";
+        _result['error_message'] = err.toString();
+        result.push(_result);
       }
     } else {
-      result.push({error: true, message: "Invalid OTEL JSON", errors: validate.errors});
+      _result['validation'] = false;
+      _result['sent'] = false;
+      _result['error'] = true;
+      _result['message'] = "Invalid OTEL JSON";
+      _result['errors'] = validate.errors;
+      result.push(_result);
     }
   }
   if(json.resourceMetrics) {
     var _json = {};
+    var _result = {};
     _json.resourceMetrics = json.resourceMetrics;
     var url_to_use = url;
     if ( !url.endsWith('/v1/metrics') ) {
       url_to_use += '/v1/metrics';
     }
     if(validate_otel_json(_json)) {
-      const response = await fetch(url_to_use, {
-        method: 'POST',
-        body: JSON.stringify(_json),
-        headers: headers
-      });
-      if (response.status === 200) {
-        processed++;
-        result.push({error: false, message: "Metrics sent successfully"});
-      } else {
-        result.push({error: true, message: "Failed to send metrics", error_message: response.statusText});
+      _result['validation'] = true;
+      try {
+        const response = await fetch(url_to_use, {
+          method: 'POST',
+          body: JSON.stringify(_json),
+          headers: headers
+        });
+        if (response.status === 200) {
+          processed++;
+          _result['error'] = false;
+          _result['sent'] = true;
+          _result['message'] = "Metrics sent successfully";
+          result.push(_result);
+        } else {
+          _result['error'] = true;
+          _result['sent'] = false;
+          _result['message'] = "Failed to send metrics";
+          _result['error_message'] = response.statusText;
+          result.push(_result);
+        }
+      } catch (err) {
+        _result['sent'] = false;
+        _result['error'] = true;
+        _result['message'] = "Failed to send metrics";
+        _result['error_message'] = err.toString();
+        result.push(_result);
       }
     } else {
-      result.push({error: true, message: "Invalid OTEL JSON", errors: validate.errors});
+      _result['validation'] = false;
+      _result['sent'] = false;
+      _result['error'] = true;
+      _result['message'] = "Invalid OTEL JSON";
+      _result['errors'] = validate.errors;
+      result.push(_result);
     }
   }
   if(json.resourceLogs) {
     var _json = {};
+    var _result = {};
     _json.resourceLogs = json.resourceLogs;
     var url_to_use = url;
     if ( !url.endsWith('/v1/logs') ) {
       url_to_use += '/v1/logs';
     }
     if(validate_otel_json(_json)) {
-      const response = await fetch(url_to_use, {
-        method: 'POST',
-        body: JSON.stringify(_json),
-        headers: headers
-      });
-    if (response.status === 200) {
-      processed++;
-      result.push({error: false, message: "Logs sent successfully"});
+      _result['validation'] = true;
+      try {
+        const response = await fetch(url_to_use, {
+          method: 'POST',
+          body: JSON.stringify(_json),
+          headers: headers
+        });
+        if (response.status === 200) {
+          processed++;
+          _result['error'] = false;
+          _result['sent'] = true;
+          _result['message'] = "Logs sent successfully";
+          result.push(_result);
+        } else {
+          _result['error'] = true;
+          _result['sent'] = false;
+          _result['message'] = "Failed to send logs";
+          _result['error_message'] = response.statusText;
+          result.push(_result);
+          }
+      } catch (err) {
+        _result['sent'] = false;
+        _result['error'] = true;
+        _result['message'] = "Failed to send logs";
+        _result['error_message'] = err.toString();
+        result.push(_result);
+      }
     } else {
-      result.push({error: true, message: "Failed to send logs", error_message: response.statusText});
-    }
-    } else {
-      result.push({error: true, message: "Invalid OTEL JSON", errors: validate.errors});
+      _result['validation'] = false;
+      _result['sent'] = false;
+      _result['error'] = true;
+      _result['message'] = "Invalid OTEL JSON";
+      _result['errors'] = validate.errors;  
+      result.push(_result);
     }
   }
   return {result: result, total: total, processed: processed};
@@ -639,7 +705,7 @@ app.post("/api/send_json", async (req, res) => {
   } else {
     try {
       var results = await send_otel_json(url, headers, json);
-      res.json({message: `✅ JSON sent successfully (${results.processed}/${results.total})`, result: results.result});
+      res.json({message: `✅ JSON sent: (${results.processed}/${results.total})`, result: results.result});
     } catch (error) {
       console.error('Error sending json:', error);
       res.status(500).json({error: true, message: "❌ Failed to send json"});

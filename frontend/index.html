@@ -101,7 +101,7 @@
     </div>
     <div class="template-section-50">
       <div>
-        <h3>📝 OTEL Input <button class="header-button" id="otel_input_clear">Clear</button><button class="header-button" id="otel_input_save">Save</button><button class="header-button" id="otel_input_open">Open</button></h3>
+        <h3>📝 OTEL Input <button class="header-button" id="otel_input_clear">Clear</button><button class="header-button" id="otel_input_save">Save</button><button class="header-button" id="otel_input_open">Open</button><span id="otel_input_validation" style="display: none;"></span></h3>
         <textarea id="otel_input" rows="20" cols="80"></textarea>
         <form><div class="template-buttons">
           📡
@@ -118,7 +118,6 @@
           New trace and span id <input type="checkbox" id="otel_input_new_trace_span_id" name="otel_input_new_trace_span_id" checked/>
           Re-time timestamps <input type="checkbox" id="otel_input_strip_timestamps" name="otel_input_strip_timestamps" checked/>
         </div></form>
-        <span id='otel_input_send_status'></span>
       </div>
       <div class="auto-scrollable">
         <div id="openai_4_input" style="flex: 1; height: 100%;">&nbsp;</div>
