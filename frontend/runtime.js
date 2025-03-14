@@ -163,6 +163,20 @@ function append_refinery_rule_history(rule) {
     return option.text;
 }
 
+function show_send_error_dialog(span_id, error) {
+    var span = document.getElementById(span_id);
+    span.innerHTML = "";
+    const result_button = document.createElement("button");
+    result_button.classList.add("header-button");
+    result_button.classList.add("red");
+    result_button.innerText = "Has Error(s)";
+    result_button.addEventListener("click", event => {
+        open_dialog(create_dialog("Input Send Result", error.message, "OK"));
+    }, { passive: true});
+    span.appendChild(result_button);
+    span.style.display = "inline-block";
+}
+
 /**
  * generate dialog to be attached to the result span
  * 1. otel input section
@@ -249,6 +263,7 @@ function init_otelcol_out_ws(config) {
                 // we should send this off to the whatever output endpoint - that can receive otlp json
                 otelcol_json_output.setValue(message);
                 // put message into the cache, so that it can be revisited.
+                // index is a position string of the otelcol_results selection
                 append_otelcol_result(message);
                 otelcol_json_output.setCursor(otelcol_json_output.lineCount(), 0);
                 // if the send auto mode is enabled, then send the data to the endpoint.
@@ -270,21 +285,18 @@ function init_otelcol_out_ws(config) {
                             console.log(data.message);
                             document.getElementById("otelcol_send_status").innerHTML = data.message;
                             show_send_result_dialog("otel_result_validation", data);
+                            // store the result data in the selected option when sent
+                            var selectedIndex = document.getElementById("otelcol_results").selectedIndex;
+                            document.getElementById("otelcol_results")[selectedIndex].data = data;
+                            document.getElementById("otelcol_results")[selectedIndex].error = "";
                         })
                         .catch(error => {
+                            var selectedIndex = document.getElementById("otelcol_results").selectedIndex;
+                            document.getElementById("otelcol_results")[selectedIndex].data = "";
+                            document.getElementById("otelcol_results")[selectedIndex].error = error;
                             console.error('Error sending json:', error)
                             document.getElementById("otelcol_send_status").innerHTML = "";
-                            var span = document.getElementById("otel_result_validation");
-                            span.innerHTML = "";
-                            const result_button = document.createElement("button");
-                            result_button.classList.add("header-button");
-                            result_button.classList.add("red");
-                            result_button.innerText = "Has Error(s)";
-                            result_button.addEventListener("click", event => {
-                                open_dialog(create_dialog("Input Send Result", error.message, "OK"));
-                            }, { passive: true});
-                            span.appendChild(result_button);
-                            span.style.display = "inline-block";
+                            show_send_error_dialog("otel_result_validation", error);
                         });
                 }
             } else {
@@ -604,6 +616,8 @@ async function init_page() {
         document.getElementById("otel_inputs").addEventListener("change", (event)=> {
             var selected_index = event.target.selectedIndex;
             var input = event.target.options[selected_index].input;
+            var data = event.target.options[selected_index].data;
+            var error = event.target.options[selected_index].error;
             // before setting the input, get the current input.
             var _input = otelcol_json_input.getValue();
             // compare the input with the current input, and if they are different, update it.
@@ -612,6 +626,15 @@ async function init_page() {
             }
             // set the input to the otel_input textarea
             otelcol_json_input.setValue(input);
+
+            // update the data to be shown in result validation, so that user can
+            // also find out about the result of the send
+            if(data && data != "") {
+                show_send_result_dialog("otel_input_validation", data);
+            } else if(error && error != "") {
+                show_send_error_dialog("otel_input_validation", error);
+            }
+
             // update the current input`
             current_input = selected_index;
         }, { passive: true });
@@ -621,6 +644,8 @@ async function init_page() {
         document.getElementById("otelcol_results").addEventListener("change", (event) => {
             var selected_index = event.target.selectedIndex;
             var result = event.target.options[selected_index].result;
+            var data = event.target.options[selected_index].data;
+            var error = event.target.options[selected_index].error;
             // before setting the result, get the current result.
             var _result = otelcol_json_output.getValue();
             // compare the result with the current result, and if they are different, update it.
@@ -629,6 +654,14 @@ async function init_page() {
             }
             // set the result to the otelcol_json_output textarea
             otelcol_json_output.setValue(result);
+
+            // update the data to be shown in result validation, so that user can
+            // also find out about the result of the send
+            if(data && data != "") {
+                show_send_result_dialog("otel_result_validation", data);
+            } else if(error && error != "") {
+                show_send_error_dialog("otel_result_validation", error);
+            }
             // update the current result
             current_result = selected_index;
         }, { passive: true});
@@ -1090,21 +1123,18 @@ async function init_page() {
                     console.log(data.message);
                     document.getElementById("otelcol_send_status").innerHTML = "";
                     show_send_result_dialog("otel_result_validation", data);
+                    // store the result data in the selected option when sent
+                    var selectedIndex = document.getElementById("otelcol_results").selectedIndex;
+                    document.getElementById("otelcol_results")[selectedIndex].error = "";
+                    document.getElementById("otelcol_results")[selectedIndex].data = data;
                 })
                 .catch(error => {
+                    var selectedIndex = document.getElementById("otelcol_results").selectedIndex;
+                    document.getElementById("otelcol_results")[selectedIndex].error = error;
+                    document.getElementById("otelcol_results")[selectedIndex].data = "";
                     console.error('Error sending json:', error);
                     document.getElementById("otelcol_send_status").innerHTML = "";
-                    var span = document.getElementById("otel_result_validation");
-                    span.innerHTML = "";
-                    const result_button = document.createElement("button");
-                    result_button.classList.add("header-button");
-                    result_button.classList.add("red");
-                    result_button.innerText = "Has Error(s)";
-                    result_button.addEventListener("click", event => {
-                        open_dialog(create_dialog("Input Send Result", error.message, "OK"));
-                    }, { passive: true});
-                    span.appendChild(result_button);
-                    span.style.display = "inline-block";
+                    show_send_error_dialog("otel_result_validation", error);
                 });
             }, { passive: true});
 
@@ -1136,20 +1166,16 @@ async function init_page() {
                     console.log(data.message);
                     // post the result to the otel_input_validation button and show it
                     show_send_result_dialog("otel_input_validation", data);
+                    var selectedIndex = document.getElementById("otel_inputs").selectedIndex;
+                    document.getElementById("otel_inputs")[selectedIndex].data = data;
+                    document.getElementById("otel_inputs")[selectedIndex].error = "";
                 })
                 .catch(error => {
                     console.error('Error sending json:', error);
-                    var span = document.getElementById("otel_input_validation");
-                    span.innerHTML = "";
-                    const result_button = document.createElement("button");
-                    result_button.classList.add("header-button");
-                    result_button.classList.add("red");
-                    result_button.innerText = "Has Error(s)";
-                    result_button.addEventListener("click", event => {
-                        open_dialog(create_dialog("Input Send Result", error.message, "OK"));
-                    }, { passive: true});
-                    span.appendChild(result_button);
-                    span.style.display = "inline-block";
+                    show_send_error_dialog("otel_input_validation", error);
+                    var selectedIndex = document.getElementById("otel_inputs").selectedIndex;
+                    document.getElementById("otel_inputs")[selectedIndex].error = error;
+                    document.getElementById("otel_inputs")[selectedIndex].data = "";
                 });
             }, { passive: true});
         }
