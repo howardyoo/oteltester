@@ -163,6 +163,75 @@ function append_refinery_rule_history(rule) {
     return option.text;
 }
 
+/**
+ * generate dialog to be attached to the result span
+ * 1. otel input section
+ * 2. otel col output section
+ * data contains the result to be rendered
+ */
+function show_send_result_dialog(span_id, data) {
+    var span = document.getElementById(span_id);
+    // clear all the children of the span
+    span.innerHTML = "";
+    const result_button = document.createElement("button");
+    result_button.result = data.result;
+    result_button.classList.add("header-button");
+    // iterate through the result, and if error is found, color the button red
+    var has_error = false;
+    for(var key in data.result) {
+        if(data.result[key].error) {
+            has_error = true;
+            break;
+        }
+    }
+    if(has_error) {
+        result_button.classList.add("red");
+        result_button.innerText = "Has Error(s)";
+    } else {
+        result_button.classList.add("green");
+        result_button.innerText = "OK";
+    }
+    result_button.addEventListener("click", event => {
+        const result = event.currentTarget.result;
+        // create dialog which contains the error details.
+        var validation_result = document.createElement("div");
+        validation_result.className = "validation-result";
+        // try to render out the result in HTML.
+        // validation: boolean, sent: boolean, error: boolean, message: whatever message returned by the server side
+        // errors: array of messages containing error details.
+        // which consists of instancePath, schemaPath, keyword, params (key value pair), and message
+        var html = "";
+        var msg_no = "0";
+        for(var i=0; i < result.length; i++) {
+            var r = result[i];
+            msg_no++;
+            html += `<div><h3>OTEL Input No. ${msg_no}</h3>`;
+            html += "<ul>";
+            html += `<li>OTEL JSON Validation: ${r["validation"] == true? "✅ Valid" : "❌ Invalid"}</li>`;
+            html += `<li>Message was sent: ${r["sent"] == true? "✅ Yes" : "❌ No"}</li>`;
+            html += `<li>Message: ${r["error"] == true? "❌" : "✅"} ${r["message"]}</li>`;
+            if(r.errors) {
+                html += "<li><h4>🛑 Errors</h4><ul>";
+                for(var j=0; j < r.errors.length; j++) {
+                    var e = r.errors[j];
+                    html += `<li>Instance Path: ${e.instancePath}</li>`;
+                    html += `<li>Schema Path: ${e.schemaPath}</li>`;
+                    html += `<li>Keyword: ${e.keyword}</li>`;
+                    html += `<li>Params: ${JSON.stringify(e.params)}</li>`;
+                    html += `<li>Message: ${e.message}</li>`;
+                }
+                html += "</ul></li>";
+            }
+            html += "</ul></div>";
+        }
+        validation_result.innerHTML = html;
+        open_dialog(create_dialog("Input Send Result", validation_result, "OK"));
+    }, { passive: true});
+    span.appendChild(result_button);
+    // want to display the span, that's all
+    span.style.display = "inline-block";
+}
+
 function init_otelcol_out_ws(config) {
     var ws_url = (config.host_name.includes("localhost")) ? "ws" : "wss";
     try {
@@ -200,10 +269,22 @@ function init_otelcol_out_ws(config) {
                         .then(data => {
                             console.log(data.message);
                             document.getElementById("otelcol_send_status").innerHTML = data.message;
+                            show_send_result_dialog("otel_result_validation", data);
                         })
                         .catch(error => {
                             console.error('Error sending json:', error)
-                            document.getElementById("otelcol_send_status").innerHTML = error.message;
+                            document.getElementById("otelcol_send_status").innerHTML = "";
+                            var span = document.getElementById("otel_result_validation");
+                            span.innerHTML = "";
+                            const result_button = document.createElement("button");
+                            result_button.classList.add("header-button");
+                            result_button.classList.add("red");
+                            result_button.innerText = "Has Error(s)";
+                            result_button.addEventListener("click", event => {
+                                open_dialog(create_dialog("Input Send Result", error.message, "OK"));
+                            }, { passive: true});
+                            span.appendChild(result_button);
+                            span.style.display = "inline-block";
                         });
                 }
             } else {
@@ -938,6 +1019,9 @@ async function init_page() {
                 // clear the result cache
                 var select = document.getElementById("otelcol_results");
                 select.innerHTML = "";
+                // clear the result button
+                document.getElementById("otel_result_validation").innerHTML = "";
+                document.getElementById("otelcol_send_status").innerHTML = "";
             }, { passive: true});
 
             // export the otel config to otelbin.io
@@ -1004,11 +1088,23 @@ async function init_page() {
                 .then(response => response.json())
                 .then(data => {
                     console.log(data.message);
-                    document.getElementById("otelcol_send_status").innerHTML = data.message;
+                    document.getElementById("otelcol_send_status").innerHTML = "";
+                    show_send_result_dialog("otel_result_validation", data);
                 })
                 .catch(error => {
-                    console.error('Error sending json:', error)
-                    document.getElementById("otelcol_send_status").innerHTML = error.message;
+                    console.error('Error sending json:', error);
+                    document.getElementById("otelcol_send_status").innerHTML = "";
+                    var span = document.getElementById("otel_result_validation");
+                    span.innerHTML = "";
+                    const result_button = document.createElement("button");
+                    result_button.classList.add("header-button");
+                    result_button.classList.add("red");
+                    result_button.innerText = "Has Error(s)";
+                    result_button.addEventListener("click", event => {
+                        open_dialog(create_dialog("Input Send Result", error.message, "OK"));
+                    }, { passive: true});
+                    span.appendChild(result_button);
+                    span.style.display = "inline-block";
                 });
             }, { passive: true});
 
@@ -1037,69 +1133,9 @@ async function init_page() {
                 })
                 .then(response => response.json()) 
                 .then(data => {
-                    // console.log(data.message);
-                    // console.log(data.result);
+                    console.log(data.message);
                     // post the result to the otel_input_validation button and show it
-                    var span = document.getElementById("otel_input_validation");
-                    // clear all the children of the span
-                    span.innerHTML = "";
-                    const result_button = document.createElement("button");
-                    result_button.result = data.result;
-                    result_button.classList.add("header-button");
-                    // iterate through the result, and if error is found, color the button red
-                    var has_error = false;
-                    for(var key in data.result) {
-                        if(data.result[key].error) {
-                            has_error = true;
-                            break;
-                        }
-                    }
-                    if(has_error) {
-                        result_button.classList.add("red");
-                        result_button.innerText = "Has Error(s)";
-                    } else {
-                        result_button.classList.add("green");
-                        result_button.innerText = "OK";
-                    }
-                    result_button.addEventListener("click", event => {
-                        const result = event.currentTarget.result;
-                        // create dialog which contains the error details.
-                        var validation_result = document.createElement("div");
-                        validation_result.className = "validation-result";
-                        // try to render out the result in HTML.
-                        // validation: boolean, sent: boolean, error: boolean, message: whatever message returned by the server side
-                        // errors: array of messages containing error details.
-                        // which consists of instancePath, schemaPath, keyword, params (key value pair), and message
-                        var html = "";
-                        var msg_no = "0";
-                        for(var i=0; i < result.length; i++) {
-                            var r = result[i];
-                            msg_no++;
-                            html += `<div><h3>OTEL Input No. ${msg_no}</h3>`;
-                            html += "<ul>";
-                            html += `<li>OTEL JSON Validation: ${r["validation"] == true? "✅ Valid" : "❌ Invalid"}</li>`;
-                            html += `<li>Message was sent: ${r["sent"] == true? "✅ Yes" : "❌ No"}</li>`;
-                            html += `<li>Message: ${r["error"] == true? "❌" : "✅"} ${r["message"]}</li>`;
-                            if(r.errors) {
-                                html += "<li><h4>🛑 Errors</h4><ul>";
-                                for(var j=0; j < r.errors.length; j++) {
-                                    var e = r.errors[j];
-                                    html += `<li>Instance Path: ${e.instancePath}</li>`;
-                                    html += `<li>Schema Path: ${e.schemaPath}</li>`;
-                                    html += `<li>Keyword: ${e.keyword}</li>`;
-                                    html += `<li>Params: ${JSON.stringify(e.params)}</li>`;
-                                    html += `<li>Message: ${e.message}</li>`;
-                                }
-                                html += "</ul></li>";
-                            }
-                            html += "</ul></div>";
-                        }
-                        validation_result.innerHTML = html;
-                        open_dialog(create_dialog("Input Send Result", validation_result, "OK"));
-                    }, { passive: true});
-                    span.appendChild(result_button);
-                    // want to display the span, that's all
-                    span.style.display = "inline-block";
+                    show_send_result_dialog("otel_input_validation", data);
                 })
                 .catch(error => {
                     console.error('Error sending json:', error);

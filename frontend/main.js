@@ -258,7 +258,7 @@ function refresh_main() {
       otelcol_html += "<textarea id='otelcol_config' rows='20' cols='80'></textarea></div></div>";
       otelcol_html += "<div class='template-section-50'>";
       otelcol_html += "<div><h4>🖥️ Console Output <button class='header-button' id='otelcol_output_clear'>Clear</button></h4><textarea id='otelcol_output' rows='20' cols='80'></textarea></div>";
-      otelcol_html += "<div><h4>📢 Otelcol Result <button class='header-button' id='otelcol_result_clear'>Clear</button></h4>";
+      otelcol_html += "<div><h4>📢 Otelcol Result <button class='header-button' id='otelcol_result_clear'>Clear</button><span id='otel_result_validation' style='display: none;'></span></h4>";
       otelcol_html += "<textarea id='otelcol_result' rows='20' cols='80'></textarea>";
       otelcol_html += "<form><div class='template-buttons'> 📡 <select id='otelcol_send_endpoint'>";
       otelcol_html += "<option value='http://localhost:8080' selected='true'>Local refinery</option>";
