@@ -265,7 +265,7 @@ function refresh_main() {
       otelcol_html += "<option value='https://api.honeycomb.io'>https://api.honeycomb.io</option>";
       otelcol_html += "<option value='https://api.eu1.honeycomb.io'>https://api.eu1.honeycomb.io</option>";
       otelcol_html += "</select>";
-      otelcol_html += "<input type='password' id='otelcol_send_apikey' placeholder='API Key' autocomplete='off' value='1234567890'>";
+      otelcol_html += "<input type='password' id='otelcol_send_apikey' placeholder='API Key' autocomplete='off' value='1234567890' data-1p-ignore>";
       otelcol_html += "<input type='button' id='otelcol_send' value='Send'>";
       otelcol_html += " Auto <select id='otelcol_send_auto'>";
       otelcol_html += "<option value='true'>on</option>";
@@ -325,7 +325,7 @@ function refresh_main() {
       refinery_html += "<option value='https://api.honeycomb.io'>https://api.honeycomb.io</option>";
       refinery_html += "<option value='https://api.eu1.honeycomb.io'>https://api.eu1.honeycomb.io</option>";
       refinery_html += "</select>";
-      refinery_html += "<input type='password' id='refinrey_send_apikey' placeholder='API Key' autocomplete='off'>";
+      refinery_html += "<input type='password' id='refinrey_send_apikey' placeholder='API Key' autocomplete='off' data-1p-ignore>";
       refinery_html += "<input type='button' id='refinery_send' value='Send'>";
       refinery_html += " Auto <select id='refinery_send_auto'>";
       refinery_html += "<option value='true'>on</option>";
