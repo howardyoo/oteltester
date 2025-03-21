@@ -22,8 +22,18 @@ for macos:
 brew install zstd
 ```
 
-### Additional instructions for macos users
-- also, link the zstd dylib to the path that npm looks for. Somehow, in macos, npm tries to look for the dylib in `/usr/local/lib/libzstd.1.dylib`, but the actual location is in `/opt/homebrew/Cellar/zstd/1.5.x/lib/libzstd.1.dylib`. The version number `x` can vary, so set it accordingly as such:
+### Additional instructions for MACOS users
+- You might encounter the following error when trying to run the tester natively in your MacOS environment:
+```
+ode:internal/modules/cjs/loader:1925
+  return process.dlopen(module, path.toNamespacedPath(filename));
+                 ^
+
+Error: dlopen(/Users/howardyoo/Projects/oteltester/node_modules/fast-zstd/build/Release/zstd.node, 0x0001): Library not loaded: /usr/local/lib/libzstd.1.dylib
+  Referenced from: <E2C32DF6-8541-38DF-8815-6ED32CCC1627> /Users/howardyoo/Projects/oteltester/node_modules/fast-zstd/build/Release/zstd.node
+  Reason: tried: '/usr/local/lib/libzstd.1.dylib' (no such file), '/System/Volumes/Preboot/Cryptexes/OS/usr/local/lib/libzstd.1.dylib' (no such file), '/usr/local/lib/libzstd.1.dylib' (no such file)
+```
+- In that case, link the zstd dylib to the path that npm looks for. Somehow, in macos, npm tries to look for the dylib in `/usr/local/lib/libzstd.1.dylib`, but the actual location is in `/opt/homebrew/Cellar/zstd/1.5.x/lib/libzstd.1.dylib` (since have installed libzstd using brew). The version number `x` can vary, so set it accordingly as such:
 
 ```
 sudo ln -s /opt/homebrew/Cellar/zstd/1.5.6/lib/libzstd.1.5.6.dylib /usr/local/lib/libzstd.1.dylib
