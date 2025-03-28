@@ -132,6 +132,21 @@ To stop the application, run the following command:
 OPENAI_API_KEY=<your-openai-api-key>
 OPENAI_MODEL=<your-openai-model>
 ```
+- For the docker compose, edit the docker-compose.yaml and add in your OPENAI API KEY:
+```yaml
+services:
+  oteltester:
+    environment:
+      OPENAI_API_KEY: "<API-KEY-HERE>"
+      OPENAI_MODEL: "gpt-4o"
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: oteltester:latest
+    ports:
+      - "3000:3000"
+      - "3001:3001"
+```
 - You can get the OpenAI API key from [here](https://platform.openai.com/api-keys)
 - You can get the OpenAI model from [here](https://platform.openai.com/docs/models)
 - You can also use .env.development and run `npm run dev` to use it locally.

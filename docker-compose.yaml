@@ -1,5 +1,8 @@
 services:
   oteltester:
+    environment:
+      OPENAI_API_KEY: ""
+      OPENAI_MODEL: "gpt-4o"
     build:
       context: .
       dockerfile: Dockerfile
