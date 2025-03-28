@@ -53,6 +53,10 @@ var current_edit = null;
 // turndown service for converting html to markdown or vice versa
 const turndownService = new TurndownService();
 
+// timer for otel input
+// in seconds, and when timer is on, will continue to count up
+var otel_input_timer = -1;
+
 function init_refinery_out_ws(config) {
     if (refinery_out_ws == null) {
         try {
@@ -271,14 +275,40 @@ function init_otelcol_out_ws(config) {
                     var endpoint = document.getElementById("otelcol_send_endpoint").value;
                     var apikey = document.getElementById("otelcol_send_apikey").value;
                     var json_data = otelcol_json_output.getValue();
+                    var headers = {
+                        'Content-Type': 'application/json',
+                        'x-honeycomb-team': apikey
+                    }
+                    // check the json data for resource attribute service.name.
+                    var service_name = null;
+                    // THIS IS A SPECIAL CASE FOR METRICS DATA ONLY.
+                    try {
+                        var json = JSON.parse(json_data);
+                        if(json.resourceMetrics) {
+                            for(var i=0; i < json.resourceMetrics.length; i++) {
+                                var resourceMetric = json.resourceMetrics[i];
+                                if(resourceMetric.resource.attributes) {
+                                    for(var j=0; j < resourceMetric.resource.attributes.length; j++) {
+                                        var attribute = resourceMetric.resource.attributes[j];
+                                        if(attribute.key == 'service.name' && attribute.value.stringValue) {
+                                            service_name = attribute.value.stringValue;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } catch (error) {
+                        console.error("Error parsing json data:", error);
+                    }
+                    if(service_name) {
+                        headers['x-honeycomb-dataset'] = service_name;
+                    }
                     document.getElementById("otelcol_send_status").innerHTML = "Sending...";
                     fetch('/api/send_json?url=' + encodeURIComponent(endpoint), {
                         method: 'POST',
                         body: json_data,
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'x-honeycomb-team': apikey
-                            }
+                        headers: headers
                         })
                         .then(response => response.json())
                         .then(data => {
@@ -1110,13 +1140,39 @@ async function init_page() {
                 var apikey = document.getElementById("otelcol_send_apikey").value;
                 var json_data = otelcol_json_output.getValue();
                 document.getElementById("otelcol_send_status").innerHTML = "Sending...";
+                var headers = {
+                    'Content-Type': 'application/json',
+                    'x-honeycomb-team': apikey
+                }
+                // check the json data for resource attribute service.name.
+                var service_name = null;
+                // THIS IS A SPECIAL CASE FOR METRICS DATA ONLY.
+                try {
+                    var json = JSON.parse(json_data);
+                    if(json.resourceMetrics) {
+                        for(var i=0; i < json.resourceMetrics.length; i++) {
+                            var resourceMetric = json.resourceMetrics[i];
+                            if(resourceMetric.resource.attributes) {
+                                for(var j=0; j < resourceMetric.resource.attributes.length; j++) {
+                                    var attribute = resourceMetric.resource.attributes[j];
+                                    if(attribute.key == 'service.name' && attribute.value.stringValue) {
+                                        service_name = attribute.value.stringValue;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error("Error parsing json data:", error);
+                }   
+                if(service_name) {
+                    headers['x-honeycomb-dataset'] = service_name;
+                }
                 fetch('/api/send_json?url=' + encodeURIComponent(endpoint), {
                     method: 'POST',
                     body: json_data,
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'x-honeycomb-team': apikey
-                    }
+                    headers: headers
                 })
                 .then(response => response.json())
                 .then(data => {
@@ -1138,6 +1194,20 @@ async function init_page() {
                 });
             }, { passive: true});
 
+            // timer for otel input
+            document.getElementById("otel_input_timer").addEventListener("change", event => {
+                //console.log("Timer changed:", event.target.value);
+                var timer = event.target.value;
+                // timer value in seconds
+                if(timer == "0") {
+                    // disable the timer
+                    otel_input_timer = -1;
+                } else {
+                    // enable the timer and start it off, counting down.
+                    otel_input_timer = timer;
+                }
+            }, { passive: true});
+
             // send json to otel collector
             document.getElementById("otel_input_send").addEventListener("click", event => {
                 console.log("sending json to otel collector");
@@ -1152,14 +1222,39 @@ async function init_page() {
                 // apply template to the json_data right before sending
                 json_data = JSON.stringify(apply_template(JSON.parse(json_data), new_ids, strip_time));
                 var apikey = document.getElementById("otel_input_send_apikey").value;
-
+                var headers = {
+                    'Content-Type': 'application/json',
+                    'x-honeycomb-team': apikey
+                }
+                // check the json data for resource attribute service.name.
+                var service_name = null;
+                // THIS IS A SPECIAL CASE FOR METRICS DATA ONLY.
+                try {
+                    var json = JSON.parse(json_data);
+                    if(json.resourceMetrics) {
+                        for(var i=0; i < json.resourceMetrics.length; i++) {
+                            var resourceMetric = json.resourceMetrics[i];
+                            if(resourceMetric.resource.attributes) {
+                                for(var j=0; j < resourceMetric.resource.attributes.length; j++) {
+                                    var attribute = resourceMetric.resource.attributes[j];
+                                    if(attribute.key == 'service.name' && attribute.value.stringValue) {
+                                        service_name = attribute.value.stringValue;
+                                        break;
+                                    }
+                                }
+                            }   
+                        }
+                    }
+                } catch (error) {
+                    console.error("Error parsing json data:", error);
+                }
+                if(service_name) {
+                    headers['x-honeycomb-dataset'] = service_name;
+                }
                 fetch('/api/send_json?url=' + encodeURIComponent(otelcol_url), {
                     method: 'POST',
                     body: json_data,
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'x-honeycomb-team': apikey
-                    }
+                    headers: headers
                 })
                 .then(response => response.json()) 
                 .then(data => {
@@ -1371,11 +1466,29 @@ function refresh_websocket() {
     setTimeout(refresh_websocket, WEBSOCKET_REFERSH_INTERVAL);
 }
 
+// refresh timer runs every second, checks whether the
+// counter is enabled and should click the send button
+function refresh_timer() {
+    if(otel_input_timer > 0) {
+        otel_input_timer--;
+    }
+    else if(otel_input_timer == 0) {
+        // send the json to the otel collector, by clicking the send button
+        document.getElementById("otel_input_send").click();
+        // reset the timer
+        otel_input_timer = parseInt(document.getElementById("otel_input_timer").value);
+    }
+    setTimeout(refresh_timer, TIMER_REFRESH_INTERVAL);
+}
+
 const WEBSOCKET_REFERSH_INTERVAL = 60000;
 const STATUS_REFRESH_INTERVAL = 500;
+const TIMER_REFRESH_INTERVAL = 1000;    // every second
 
 document.onload = init_page();
 // refresh the status every 500ms
 setTimeout(refresh_status, STATUS_REFRESH_INTERVAL);
 // refresh the websocket every 60 seconds
 setTimeout(refresh_websocket, WEBSOCKET_REFERSH_INTERVAL);
+// refresh the timer every 1 second
+setTimeout(refresh_timer, TIMER_REFRESH_INTERVAL);

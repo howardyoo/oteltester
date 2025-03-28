@@ -675,6 +675,9 @@ app.post("/api/send_json", async (req, res) => {
   if(req.headers['x-honeycomb-team']) {
     headers['x-honeycomb-team'] = req.headers['x-honeycomb-team'];
   }
+  if(req.headers['x-honeycomb-dataset']) {
+    headers['x-honeycomb-dataset'] = req.headers['x-honeycomb-dataset'];
+  }
   
   if(Array.isArray(json)) {
     try {
