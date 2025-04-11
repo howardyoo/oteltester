@@ -90,6 +90,10 @@
                     // end hook
                     // for now, simply set to the given domElement.
                     // domElement.innerHTML = "<pre>" + domeElement.innerText + "</pre>";
+                    console.log("dom element text: " + domElement.innerText);
+                    var yamlText = domElement.innerText.match(/```(yaml)?([\S\s]*)```/)[2];
+                    domElement.innerHTML = "<pre>" + yamlText + "</pre>";
+                    // otelcol_editor.setValue(yamlText);
                 }
             });
         }

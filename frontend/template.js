@@ -87,6 +87,42 @@ function apply_trace_template(json, new_ids = false, strip_time = false, idMap, 
                                     span.spanId = span_id;
                                 }
                             }
+                            if (span.links) {
+                                span.links.forEach(link => {
+                                    if (link.traceId.match(template_regex)) {
+                                        if (idMap[link.traceId]) {
+                                            link.traceId = idMap[link.traceId];
+                                        } else {
+                                            var new_id = new_trace_id();
+                                            idMap[link.traceId] = new_id;
+                                            link.traceId = new_id;
+                                        }
+                                    } else if (new_ids) {
+                                        if (idMap[link.traceId]) {
+                                            link.traceId = idMap[link.traceId];
+                                        } else {
+                                            var new_id = new_trace_id();
+                                            idMap[link.traceId] = new_id;
+                                            link.traceId = new_id;
+                                        }
+                                    }
+                                    if (link.spanId.match(template_regex)) {
+                                        if (idMap[link.spanId]) {
+                                            link.spanId = idMap[link.spanId];
+                                        } else {
+                                            var new_id = new_span_id();
+                                            idMap[link.spanId] = new_id;
+                                            link.spanId = new_id;
+                                        }
+                                    } else if (new_ids) {
+                                        if (idMap[link.spanId]) {
+                                            link.spanId = idMap[link.spanId];
+                                        } else {
+                                            var new_id = new_span_id();
+                                        }
+                                    }
+                                });
+                            }
                             if (span.parentSpanId) {
                                 if (span.parentSpanId.match(template_regex)) {
                                     if (idMap[span.parentSpanId]) {

@@ -12,3 +12,5 @@ saved/*.json
 .env.local
 .env.production
 .env.test
+.cursor
+cursor
