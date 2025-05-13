@@ -137,7 +137,7 @@
                   }
                 }
               },
-              "required": ["attributes"]
+              "required": []
             },
             "scopeMetrics": {
               "type": "array",
@@ -167,7 +167,7 @@
                         }
                       }
                     },
-                    "required": ["name", "version"]
+                    "required": ["name"]
                   },
                   "metrics": {
                     "type": "array",
@@ -208,7 +208,7 @@
                                     }
                                   }
                                 },
-                                "required": ["startTimeUnixNano", "timeUnixNano"]
+                                "required": ["timeUnixNano"]
                               }
                             }
                           },
@@ -259,11 +259,11 @@
                                 "properties": {
                                   "startTimeUnixNano": { "type": "string" },
                                   "timeUnixNano": { "type": "string" },
-                                  "count": { "type": "integer" },
+                                  "count": { "type": ["integer", "string"] },
                                   "sum": { "type": "number" },
                                   "bucketCounts": {
                                     "type": "array",
-                                    "items": { "type": "integer" }
+                                    "items": { "type": ["integer", "string"] }
                                   },
                                   "explicitBounds": {
                                     "type": "array",
@@ -289,7 +289,7 @@
                                     }
                                   }
                                 },
-                                "required": ["startTimeUnixNano", "timeUnixNano", "count", "sum", "bucketCounts", "explicitBounds", "min", "max"]
+                                "required": ["timeUnixNano", "count", "sum", "bucketCounts", "explicitBounds", "min", "max"]
                               }
                             }
                           },
@@ -306,17 +306,17 @@
                                 "properties": {
                                   "startTimeUnixNano": { "type": "string" },
                                   "timeUnixNano": { "type": "string" },
-                                  "count": { "type": "integer" },
+                                  "count": { "type": ["integer", "string"] },
                                   "sum": { "type": "number" },
                                   "scale": { "type": "integer" },
-                                  "zeroCount": { "type": "integer" },
+                                  "zeroCount": { "type": ["integer", "string"] },
                                   "positive": {
                                     "type": "object",
                                     "properties": {
                                       "offset": { "type": "integer" },
                                       "bucketCounts": {
                                         "type": "array",
-                                        "items": { "type": "integer" }
+                                        "items": { "type": ["integer", "string"] }
                                       }
                                     },
                                     "required": ["offset", "bucketCounts"]
@@ -342,14 +342,14 @@
                                     }
                                   }
                                 },
-                                "required": ["startTimeUnixNano", "timeUnixNano", "count", "sum", "scale", "zeroCount", "positive", "min", "max", "zeroThreshold"]
+                                "required": ["timeUnixNano", "count", "sum", "zeroCount", "positive", "min", "max"]
                               }
                             }
                           },
                           "required": ["dataPoints"]
                         }
                       },
-                      "required": ["name", "unit", "description"]
+                      "required": ["name"]
                     }
                   }
                 },

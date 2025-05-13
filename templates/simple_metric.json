@@ -1,140 +1,140 @@
 {
-    "resourceMetrics": [
+"resourceMetrics": [
+  {
+    "resource": {
+      "attributes": [
+        {
+          "key": "service.name",
+          "value": {
+            "stringValue": "my.service"
+          }
+        }
+      ]
+    },
+    "scopeMetrics": [
       {
-        "resource": {
+        "scope": {
+          "name": "my.library",
+          "version": "1.0.0",
           "attributes": [
             {
-              "key": "service.name",
+              "key": "my.scope.attribute",
               "value": {
-                "stringValue": "test.service"
+                "stringValue": "some scope attribute"
               }
             }
           ]
         },
-        "scopeMetrics": [
+        "metrics": [
           {
-            "scope": {
-              "name": "test.library",
-              "version": "1.0.0",
-              "attributes": [
+            "name": "my.counter",
+            "unit": "1",
+            "description": "I am a Counter",
+            "sum": {
+              "aggregationTemporality": 1,
+              "isMonotonic": true,
+              "dataPoints": [
                 {
-                  "key": "test.scope.attribute",
-                  "value": {
-                    "stringValue": "some scope attribute"
-                  }
+                  "asDouble": 5,
+                  "startTimeUnixNano": "1544712660300000000",
+                  "timeUnixNano": "1544712660300000000",
+                  "attributes": [
+                    {
+                      "key": "my.counter.attr",
+                      "value": {
+                        "stringValue": "some value"
+                      }
+                    }
+                  ]
                 }
               ]
-            },
-            "metrics": [
-              {
-                "name": "test.counter",
-                "unit": "1",
-                "description": "I am a Counter",
-                "sum": {
-                  "aggregationTemporality": 1,
-                  "isMonotonic": true,
-                  "dataPoints": [
+            }
+          },
+          {
+            "name": "my.gauge",
+            "unit": "1",
+            "description": "I am a Gauge",
+            "gauge": {
+              "dataPoints": [
+                {
+                  "asDouble": 10,
+                  "timeUnixNano": "1544712660300000000",
+                  "attributes": [
                     {
-                      "asDouble": 5,
-                      "startTimeUnixNano": "0",
-                      "timeUnixNano": "0",
-                      "attributes": [
-                        {
-                          "key": "test.counter.attr",
-                          "value": {
-                            "stringValue": "some value"
-                          }
-                        }
-                      ]
+                      "key": "my.gauge.attr",
+                      "value": {
+                        "stringValue": "some value"
+                      }
                     }
                   ]
                 }
-              },
-              {
-                "name": "test.gauge",
-                "unit": "1",
-                "description": "I am a Gauge",
-                "gauge": {
-                  "dataPoints": [
+              ]
+            }
+          },
+          {
+            "name": "my.histogram",
+            "unit": "1",
+            "description": "I am a Histogram",
+            "histogram": {
+              "aggregationTemporality": 1,
+              "dataPoints": [
+                {
+                  "startTimeUnixNano": "1544712660300000000",
+                  "timeUnixNano": "1544712660300000000",
+                  "count": 2,
+                  "sum": 2,
+                  "bucketCounts": [1,1],
+                  "explicitBounds": [1],
+                  "min": 0,
+                  "max": 2,
+                  "attributes": [
                     {
-                      "asDouble": 10,
-                      "timeUnixNano": "0",
-                      "attributes": [
-                        {
-                          "key": "test.gauge.attr",
-                          "value": {
-                            "stringValue": "some value"
-                          }
-                        }
-                      ]
+                      "key": "my.histogram.attr",
+                      "value": {
+                        "stringValue": "some value"
+                      }
                     }
                   ]
                 }
-              },
-              {
-                "name": "test.histogram",
-                "unit": "1",
-                "description": "I am a Histogram",
-                "histogram": {
-                  "aggregationTemporality": 1,
-                  "dataPoints": [
+              ]
+            }
+          },
+          {
+            "name": "my.exponential.histogram",
+            "unit": "1",
+            "description": "I am an Exponential Histogram",
+            "exponentialHistogram": {
+              "aggregationTemporality": 1,
+              "dataPoints": [
+                {
+                  "startTimeUnixNano": "1544712660300000000",
+                  "timeUnixNano": "1544712660300000000",
+                  "count": 3,
+                  "sum": 10,
+                  "scale": 0,
+                  "zeroCount": 1,
+                  "positive": {
+                    "offset": 1,
+                    "bucketCounts": [0,2]
+                  },
+                  "min": 0,
+                  "max": 5,
+                  "zeroThreshold": 0,
+                  "attributes": [
                     {
-                      "startTimeUnixNano": "0",
-                      "timeUnixNano": "0",
-                      "count": 2,
-                      "sum": 2,
-                      "bucketCounts": [1,1],
-                      "explicitBounds": [1],
-                      "min": 0,
-                      "max": 2,
-                      "attributes": [
-                        {
-                          "key": "test.histogram.attr",
-                          "value": {
-                            "stringValue": "some value"
-                          }
-                        }
-                      ]
+                      "key": "my.exponential.histogram.attr",
+                      "value": {
+                        "stringValue": "some value"
+                      }
                     }
                   ]
                 }
-              },
-              {
-                "name": "test.exponential.histogram",
-                "unit": "1",
-                "description": "I am an Exponential Histogram",
-                "exponentialHistogram": {
-                  "aggregationTemporality": 1,
-                  "dataPoints": [
-                    {
-                      "startTimeUnixNano": "0",
-                      "timeUnixNano": "0",
-                      "count": 3,
-                      "sum": 10,
-                      "scale": 0,
-                      "zeroCount": 1,
-                      "positive": {
-                        "offset": 1,
-                        "bucketCounts": [0,2]
-                      },
-                      "min": 0,
-                      "max": 5,
-                      "zeroThreshold": 0,
-                      "attributes": [
-                        {
-                          "key": "test.exponential.histogram.attr",
-                          "value": {
-                            "stringValue": "some value"
-                          }
-                        }
-                      ]
-                    }
-                  ]
-                }
-              }
-            ]
+              ]
+            }
           }
         ]
       }
     ]
   }
+]
+}
