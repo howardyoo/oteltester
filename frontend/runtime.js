@@ -605,6 +605,8 @@ async function init_page() {
                             //document.getElementById('otelcol_config').textContent = yaml;
                             otelcol_editor.setValue(yaml);
                             otelcol_config_current = yaml;
+                            // add the config to the history
+                            append_otelcol_config_history(yaml);
                             document.getElementById("otelcol_save").disabled = true;
                           })
                           .catch(error => console.error('Error fetching otelcol config:', error));
@@ -627,6 +629,8 @@ async function init_page() {
                                   // document.getElementById('refinery_rule').textContent = _yaml;
                                   refinery_rule_editor.setValue(_yaml);
                                   refinery_rule_current = _yaml;
+                                  // add the rule to the history
+                                  append_refinery_rule_history(_yaml);
                                   document.getElementById("refinery_save").disabled = true;
                                 })
                                 .catch(error => console.error('Error fetching refinery rule:', error)); 
