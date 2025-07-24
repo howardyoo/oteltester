@@ -201,7 +201,7 @@
                                           "properties": {
                                             "stringValue": { "type": "string" }
                                           },
-                                          "required": ["stringValue"]
+                                          "required": []
                                         }
                                       },
                                       "required": ["key", "value"]
@@ -235,7 +235,7 @@
                                           "properties": {
                                             "stringValue": { "type": "string" }
                                           },
-                                          "required": ["stringValue"]
+                                          "required": []
                                         }
                                       },
                                       "required": ["key", "value"]
@@ -282,7 +282,7 @@
                                           "properties": {
                                             "stringValue": { "type": "string" }
                                           },
-                                          "required": ["stringValue"]
+                                          "required": []
                                         }
                                       },
                                       "required": ["key", "value"]
@@ -335,7 +335,7 @@
                                           "properties": {
                                             "stringValue": { "type": "string" }
                                           },
-                                          "required": ["stringValue"]
+                                          "required": []
                                         }
                                       },
                                       "required": ["key", "value"]
