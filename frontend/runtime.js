@@ -661,6 +661,8 @@ async function init_page() {
                             // document.getElementById('refinery_config').textContent = yaml;
                             refinery_editor.setValue(yaml);
                             refinery_config_current = yaml;
+                            append_refinery_config_history(yaml);
+
                             document.getElementById("refinery_save").disabled = true;
                             if (config.refinery_rule_exists) {
                               fetch('/api/get_yaml?path=' + refinery.rule_path)
@@ -1467,7 +1469,7 @@ function refresh_status() {
                         var config = line[8];
                         var command_name = command.split("/").pop();
                         // if the command name contains otel or refinery, process accordingly
-                        if (command_name.includes("otelcol") && config.includes(config_data.otel_collector.config_path)) {
+                        if (command_name.includes("otelcol") && config && config.includes(config_data.otel_collector.config_path)) {
                             // get the config for otelcol
                             // render the status of otel collector as running
                             document.getElementById("otelcol_status").innerHTML = "🟢 Running | <a href='http://localhost:1777/debug/pprof' target='_blank' rel='noopener'>Debug Page</a>";
@@ -1476,7 +1478,7 @@ function refresh_status() {
                             document.getElementById("otelcol_stop").setAttribute("pid", pid);
                             collector_running = true;
                         }
-                        else if (command_name.includes("refinery") && config.includes(config_data.refinery.config_path)) {
+                        else if (command_name.includes("refinery") && config && config.includes(config_data.refinery.config_path)) {
                             // get the config for refinery
                             // render the status of refinery as running
                             document.getElementById("refinery_status").innerHTML = "🟢 Running | <a href='http://localhost:6060' target='_blank' rel='noopener'>Debug Page</a>";
