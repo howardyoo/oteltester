@@ -253,12 +253,12 @@ function init_input_openai_ws(config, id_prefix, ws) {
  * function to initialize the openai assistant's behavior.
  * without calling this function, the openai assistant will not be able to run.
  * @param {*} config 
- * @param {*} id_target 
- * @param {*} id_prefix 
- * @param {*} prompt 
- * @param {*} prompt_hook 
- * @param {*} start_hook 
- * @param {*} end_hook 
+ * @param {*} id_target target DOM element to append the openai chat section to
+ * @param {*} id_prefix id prefix of the openai chat section
+ * @param {*} prompt system prompt for the openai assistant
+ * @param {*} prompt_hook hook to add more prompts to the system prompt
+ * @param {*} start_hook hook to handle the start of the openai assistant
+ * @param {*} end_hook hook to handle the end of the openai assistant
  */
 function init_input_openai(id_target, id_prefix, prompt = [], prompt_hook = null, start_hook = null, end_hook = null) {
     fetch("/api/config")
@@ -768,4 +768,135 @@ const otel_example_trace_log = `
     ]
   }
 ]
+`;
+
+const refinery_example_rule = `
+rules:
+  RulesVersion: 2
+
+  Samplers:
+    __default__:
+      RulesBasedSampler:
+        Rules:
+          #Rule 1
+          - Name: Keep 500 status codes
+            SampleRate: 1
+            Conditions:
+              - Fields: 
+                  - http.status_code
+                  - http.response.status_code
+                Operator: '>='
+                Value: 500
+                Datatype: int
+          #Rule 2
+          - Name: Keep where error field exists
+            SampleRate: 1
+            Conditions:
+              - Field: error
+                Operator: exists
+          #Rule 3
+          - Name: drop healthchecks
+            Drop: true
+            Scope: span
+            Conditions:
+              - Field: root.http.route
+                Operator: starts-with
+                Value: /healthz
+              - Fields: 
+                  - http.status_code
+                  - http.response.status_code
+                Operator: "="
+                Value: 200
+                Datatype: int
+          #Rule 4
+          - Name: Keep long duration traces
+            SampleRate: 1
+            Scope: span
+            Conditions:
+              - Field: trace.parent_id
+                Operator: not-exists
+              - Field: duration_ms
+                Operator: ">="
+                Value: 5000
+                Datatype: int
+          #Rule 5
+          - Name: Dynamically Sample 200s through 400s
+            Conditions:
+              - Fields: 
+                  - http.status_code
+                  - http.response.status_code
+                Operator: ">="
+                Value: 200
+                Datatype: int
+            Sampler:
+              EMADynamicSampler:
+                GoalSampleRate: 10              # This is a sample rate itself
+                FieldList:
+                  - service.name
+                  - root.http.route
+                  - http.method
+          #Rule 6
+          - Name: Dynamically Sample Non-HTTP Request
+            Conditions:
+              - Field: status_code
+                Operator: "<"
+                Value: 2
+                Datatype: int
+            Sampler:
+              EMADynamicSampler:
+                GoalSampleRate: 10              # This is a sample rate itself
+                FieldList:
+                  - service.name
+                  - grpc.method
+                  - grpc.service
+          #Rule 7
+          - Name: Catchall rule
+            Sampler:
+              EMAThroughputSampler:
+                GoalThroughputPerSec: 500 # This is spans per second for the entire cluster
+                UseClusterSize: true # Ensures GoalThroughputPerSec is for the full refinery cluster and not per node
+                FieldList:
+                  - service.name
+`;
+
+const refinery_example_config = `
+General:
+  ConfigurationVersion: 2
+  MinRefineryVersion: v2.0
+  ConfigReloadInterval: 50s
+
+Debugging:
+  DebugServiceAddr: localhost:6060
+  AdditionalErrorFields:
+    - trace.span_id
+  DryRun: true
+
+Network:
+  ListenAddress: 0.0.0.0:8080
+  PeerListenAddr: 0.0.0.0:8081
+  HoneycombAPI: https://api.honeycomb.io
+
+Logger:
+  Type: stdout
+  Level: info
+
+StdoutLogger:
+  Structured: true
+  SamplerEnabled: false
+  SamplerThroughput: 10
+
+LegacyMetrics:
+  Enabled: true
+  Dataset: refinery_metrics
+  APIHost: https://api.honeycomb.io
+
+OTelMetrics:
+  Enabled: true
+  Dataset: refinery_metrics_otel
+  APIHost: https://api.honeycomb.io
+
+RefineryTelemetry:
+  AddRuleReasonToTrace: true
+  AddSpanCountToRoot: true
+  AddHostMetadataToTrace: true
 `;

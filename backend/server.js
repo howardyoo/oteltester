@@ -4,7 +4,7 @@ import { exec } from "child_process";
 import { get_pids, check_pid, get_type, save_yaml, read_yaml, read_yaml_from_url, save_json, read_json } from "./utils.js";
 import { get_config, save_config, get_workdir } from "./config.js";
 import { get_https_options } from './security.js';
-import { install_otelcol, install_refinery } from "./install.js";
+import { install_otelcol, install_refinery, get_otelcol_versions, get_refinery_versions } from "./install.js";
 import http from "http";
 import https from "https";
 import { WebSocketServer } from "ws";
@@ -344,6 +344,58 @@ async function ai_assistant_send_message(ws, messages) {
     }
   }
 }
+
+// get otelcol versions available
+app.get("/api/otelcol_versions", (req, res) => {
+  get_otelcol_versions().then(versions => {
+    res.json(versions);
+  }).catch(err => {
+    console.log(err.message);
+    res.status(500).send({result: false, message: "Failed to get otelcol versions", error: err.toString()});
+  });
+});
+
+// get refinery versions available
+app.get("/api/refinery_versions", (req, res) => {
+  get_refinery_versions().then(versions => {
+    res.json(versions);
+  }).catch(err => {
+    console.log(err.message);
+    res.status(500).send({result: false, message: "Failed to get refinery versions", error: err.toString()});
+  });
+});
+
+// get the otelcol version that is currently installed
+app.get("/api/otelcol_version", (req, res) => {
+  var otelcollector = get_config().otel_collector;
+  var command_line = otelcollector.bin_path + " --version";
+  const [command, ...args] = command_line.split(" ");
+  const childProcess = spawn(command, args);
+  try {
+    childProcess.stdout.on("data", (data) => {
+      res.json({result: true, version: data.toString()});
+    });
+  } catch (err) {
+    console.log(err.message);
+    res.status(500).send({result: false, message: "Failed to get current otelcol version", error: err.toString()});
+  }
+});
+
+// get the refinery version that is currently installed
+app.get("/api/refinery_version", (req, res) => {
+  var refinery = get_config().refinery;
+  var command_line = refinery.bin_path + " --version";
+  const [command, ...args] = command_line.split(" ");
+  const childProcess = spawn(command, args);
+  try {
+    childProcess.stdout.on("data", (data) => {
+      res.json({result: true, version: data.toString()});
+    });
+  } catch (err) {
+    console.log(err.message);
+    res.status(500).send({result: false, message: "Failed to get current refinery version", error: err.toString()});
+  }
+});
 
 // start the otelcol process
 app.get("/api/otelcol_start", (req, res) => {

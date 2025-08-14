@@ -576,6 +576,32 @@ async function init_page() {
     if (document.getElementById("otelcol_start") == null || document.getElementById("refinery_start") == null) {
         setTimeout(init_page, 100);
     } else {
+
+        // get the otelcol versions
+        fetch('/api/otelcol_versions')
+          .then(response => response.json())
+          .then(data => {
+            // console.log(data);
+            // update the otelcol_version select element
+            var otelcol_version = document.getElementById("otelcol_version");
+            otelcol_version.innerHTML = "";
+            data.forEach(version => {
+                otelcol_version.innerHTML += "<option value='" + version.version + "'>" + version.version + "</option>";
+            });
+          });
+        // get the refinery versions    
+        fetch('/api/refinery_versions')
+          .then(response => response.json())
+          .then(data => {
+            // console.log(data);
+            // update the refinery_version select element
+            var refinery_version = document.getElementById("refinery_version");
+            refinery_version.innerHTML = "";
+            data.forEach(version => {
+                refinery_version.innerHTML += "<option value='" + version.version + "'>" + version.version + "</option>";
+            });
+          });
+
         // initialize the websocket, template, and textareas
         var response = await fetch('/api/config');
         var config = await response.json();
@@ -597,7 +623,14 @@ async function init_page() {
                 init_dialog();
 
                 if(collector_installed) {
-                    document.getElementById("otelcol_install_status").innerText = "🟢 Installed";
+                    // get the current otelcol version
+                    fetch('/api/otelcol_version')
+                      .then(response => response.json())
+                      .then(data => {
+                        // console.log(data);
+                        document.getElementById("otelcol_install_status").innerText = "🟢 Installed: " + data.version;
+                      });
+
                     if (config.collector_config_exists) {
                         fetch('/api/get_yaml?path=' + otel_collector.config_path)
                           .then(response => response.text())
@@ -613,7 +646,14 @@ async function init_page() {
                       }
                 }
                 if(refinery_installed) {
-                    document.getElementById("refinery_install_status").innerText = "🟢 Installed";
+                    // get the current otelcol version
+                    fetch('/api/refinery_version')
+                      .then(response => response.json())
+                      .then(data => {
+                        // console.log(data);
+                        document.getElementById("refinery_install_status").innerText = "🟢 Installed: " + data.version;
+                      });
+                      
                     if (config.refinery_config_exists) {
                         fetch('/api/get_yaml?path=' + refinery.config_path)
                           .then(response => response.text())
@@ -859,6 +899,64 @@ async function init_page() {
                 var jsonText = JSON.stringify(JSON.parse(jsonText), null, 2);
                 domElement.innerHTML = "<pre>" + jsonText + "</pre>";
                 otelcol_json_input.setValue(jsonText);
+            }
+        });
+
+        /**
+         * Initialize the openai which handles Refinery AI Chat
+         */
+        init_input_openai("openai_4_refinery", "refinery_ai_chat", [
+            {
+                "role": "system",
+                "content": `You are a helpful assistant that generates Honeycomb Refinery rules and configurations. 
+                Validate the YAML data before outputting it. Make sure the YAML data is conform to the Honeycomb Refinery specifications.
+                You are to output the YAML data only, nothing else. Do not include any other text or comments. enclose the YAML data in \`\`\` and \`\`\` tags.`
+            },
+            {
+                "role": "system",
+                "content": `Here is an example of the Refinery Rules that you can use to generate the next YAML data in case user wants to generate rules: \`\`\`yaml|n${refinery_example_rule}\`\`\``
+            },
+            {
+                "role": "system",
+                "content": `Here is an example of the Refinery Configurations that you can use to generate the next YAML data in case user wants to generate configurations: \`\`\`yaml|n${refinery_example_config}\`\`\``
+            }
+        ],
+        (id_prefix)=>{
+            // prompt hook
+            var prompt = [];
+            if(id_prefix == "refinery_ai_chat") {
+                // check the refinery rule and if the input is not empty and has length, then add it to the prompt
+                var input = refinery_rule_editor.getValue();
+                if(input && input.length > 0) {
+                    prompt.push({
+                        "role": "system",
+                        "content": `The following is the current YAML of the refinery rules. Use this as a base to generate the next YAML data in case user wants to generate rules: \`\`\`yaml|n${input}\`\`\``
+                    });
+                }
+                input = refinery_editor.getValue();
+                if(input && input.length > 0) {
+                    prompt.push({
+                        "role": "system",
+                        "content": `The following is the current YAML of the refinery configurations. Use this as a base to generate the next YAML data in case user wants to generate configurations: \`\`\`yaml|n${input}\`\`\``
+                    });
+                }
+            }
+            return prompt;
+        }, 
+        (id_prefix)=>{
+            if(id_prefix == "refinery_ai_chat") {
+                // start hook
+                // currently do nothing. pass.
+            }
+        }, 
+        (id_prefix, domElement)=>{
+            // don't believe these logics are relevant, but just in case.
+            if(id_prefix == "refinery_ai_chat") {
+                // end hook
+                // extract the json text from the domElement
+                console.log("dom element text: " + domElement.innerText);
+                var yamlText = domElement.innerText.match(/```(yaml)?([\S\s]*)```/)[2];
+                domElement.innerHTML = "<pre>" + yamlText + "</pre>";
             }
         });
 

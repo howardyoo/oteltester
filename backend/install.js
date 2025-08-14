@@ -55,6 +55,100 @@ export function stop_refinery() {
     }
 }
 
+// function to get the otelcol versions available
+export function get_otelcol_versions() {
+    return new Promise((resolve, reject) => {
+        const options = {
+            hostname: 'api.github.com',
+            path: '/repos/open-telemetry/opentelemetry-collector/releases',
+            headers: {
+                'User-Agent': 'oteltester'
+            }
+        };
+
+        https.https.get(options, (response) => {
+            let data = '';
+
+            response.on('data', (chunk) => {
+                data += chunk;
+            });
+
+            response.on('end', () => {
+                try {
+                    const releases = JSON.parse(data);
+                    const versions = releases.map(release => {
+                        // Remove 'v' prefix if present and get the version number
+                        const version = release.tag_name.replace(/^v/, '');
+                        return {
+                            version: version,
+                            name: release.name,
+                            published_at: release.published_at,
+                            is_prerelease: release.prerelease
+                        };
+                    });
+                    resolve(versions);
+                } catch (error) {
+                    reject(new Error('Failed to parse GitHub API response: ' + error.message));
+                }
+            });
+        }).on('error', (error) => {
+            reject(new Error('Failed to fetch versions: ' + error.message));
+        });
+    });
+}
+
+// function to get the refinery versions available
+export function get_refinery_versions() {
+    return new Promise((resolve, reject) => {
+        const options = {
+            hostname: 'api.github.com',
+            path: '/repos/honeycombio/refinery/releases',
+            headers: {
+                'User-Agent': 'oteltester'
+            }
+        };
+
+        https.https.get(options, (response) => {
+            let data = '';
+
+            response.on('data', (chunk) => {
+                data += chunk;
+            });
+
+            response.on('end', () => {
+                try {
+                    const releases = JSON.parse(data);
+                    const versions = releases.map(release => {
+                        // Remove 'v' prefix if present and get the version number
+                        const version = release.tag_name.replace(/^v/, '');
+                        return {
+                            version: version,
+                            name: release.name,
+                            published_at: release.published_at,
+                            is_prerelease: release.prerelease,
+                            // Add asset information specific to refinery
+                            assets: release.assets.filter(asset => 
+                                asset.name.startsWith('refinery-') && 
+                                !asset.name.endsWith('.rpm') && 
+                                !asset.name.endsWith('.checksum')
+                            ).map(asset => ({
+                                name: asset.name,
+                                download_url: asset.browser_download_url,
+                                size: asset.size
+                            }))
+                        };
+                    });
+                    resolve(versions);
+                } catch (error) {
+                    reject(new Error('Failed to parse GitHub API response: ' + error.message));
+                }
+            });
+        }).on('error', (error) => {
+            reject(new Error('Failed to fetch versions: ' + error.message));
+        });
+    });
+}
+
 // function to download and install otel collector (contrib) based on the provided version
 export function install_otelcol(ws, version) {
     console.log("Installing... otel collector");

@@ -213,13 +213,21 @@ function refresh_refinery_status(config) {
   }
 }
 
+/**
+ * refreshes the layout of the main page.
+ * if you want to change the layout, you can do it here.
+ */
 function refresh_main() {
   // fetch the config
   fetch('/api/config')
     .then(response => response.json())
     .then(data => {
+
       var otel_collector = data.otel_collector;
       var otelcol_html = "<h2>🕸️ Otel Collector</h2><ul id='otelcol_files_status'>";
+      /**
+       * OTTELCOL HTML LAYOUT
+       */
       otelcol_html += "<li>";
       if (data.collector_installed) {
         otelcol_html += "✅";
@@ -277,6 +285,9 @@ function refresh_main() {
       document.getElementById('otelcol').innerHTML = otelcol_html;
 
       var refinery = data.refinery;
+      /**
+       * REFINERY HTML LAYOUT
+       */
       var refinery_html = "<h2>⚗️ Refinery</h2><ul id='refinery_files_status'>";
       refinery_html += "<li>";
       if (data.refinery_installed) {
@@ -310,12 +321,12 @@ function refresh_main() {
       }
       refinery_html += "<input type='button' id='refinery_save' value='💾 Save Config' disabled='true'>";
       refinery_html += "<input type='button' id='refinery_clear' value='🧹 Clear Outputs'></div>";
-      refinery_html += "<div class='template-section-50'>";
-
+      refinery_html += "<div class='template-section'>";
       refinery_html += "<div><h4>📏 " + refinery.rule_path + " <span class='header-span'>Version <select id='refinery_rule_history'></select></span></h4>";
       refinery_html += "<textarea id='refinery_rule' rows='20' cols='80'></textarea></div>";
-
-      refinery_html += "<div><h4>🖥️ Console Output <button class='header-button' id='refinery_output_clear'>Clear</button></h4><textarea id='refinery_output' rows='20' cols='80'></textarea></div></div>";
+      refinery_html += "<div id='openai_4_refinery'></div>";
+      refinery_html += "<div><h4>🖥️ Console Output <button class='header-button' id='refinery_output_clear'>Clear</button></h4><textarea id='refinery_output' rows='20' cols='80'></textarea></div>";
+      refinery_html += "</div></div>";
       refinery_html += "<div class='template-section-50'>";
       refinery_html += "<div><h4>⚙️ " + refinery.config_path + " <span class='header-span'>Version <select id='refinery_config_history'></select></span></h4>";
       refinery_html += "<textarea id='refinery_config' rows='20' cols='80'></textarea></div>"
