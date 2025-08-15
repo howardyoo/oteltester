@@ -916,11 +916,11 @@ async function init_page() {
             },
             {
                 "role": "system",
-                "content": `When generating rule yaml, start with rule version line. here is an example of the Refinery Rules that you can use to generate the next YAML data in case user wants to generate rules: \`\`\`yaml|n${refinery_example_rule}\`\`\``
+                "content": `When generating rule yaml, start with rule version line (e.g. RulesVersion: 2). here is an example of the Refinery Rules that you can use to generate the next YAML data in case user wants to generate rules: \`\`\`yaml|n${refinery_example_rule}\`\`\``
             },
             {
                 "role": "system",
-                "content": `When generating configuration yaml, start with General section. Here is an example of the Refinery Configurations that you can use to generate the next YAML data in case user wants to generate configurations: \`\`\`yaml|n${refinery_example_config}\`\`\``
+                "content": `When generating configuration yaml, start with General section (e.g. General:). Here is an example of the Refinery Configurations that you can use to generate the next YAML data in case user wants to generate configurations: \`\`\`yaml|n${refinery_example_config}\`\`\``
             }
         ],
         (id_prefix)=>{
@@ -932,7 +932,7 @@ async function init_page() {
                 if(input && input.length > 0) {
                     prompt.push({
                         "role": "system",
-                        "content": `The following is the current YAML of the refinery rules. Use this as a base to generate the next YAML data in case user wants to generate rules: \`\`\`yaml|n${input}\`\`\``
+                        "content": `Make sure to validate the YAML data before outputting it. The following is the current YAML of the refinery rules, and use this as a base to generate the next YAML data in case user wants to generate rules: \`\`\`yaml|n${input}\`\`\``
                     });
                 }
                 input = refinery_editor.getValue();
@@ -959,13 +959,23 @@ async function init_page() {
                 console.log("dom element text: " + domElement.innerText);
                 var yamlText = domElement.innerText.match(/```(yaml)?([\S\s]*)```/)[2];
                 // trim yaml text to remove the first line if it is empty
-                yamlText = yamlText.trim();
+                // parse the yaml text
+                var yamlObj = jsyaml.load(yamlText);
+
+                // if the topmost key is rules, then remove it and choose the child elements
+                if(yamlObj["rules"]) {
+                    yamlObj = yamlObj["rules"]
+                }
+
+                // convert the yaml object to text
+                yamlText = jsyaml.dump(yamlObj);
+                // console.log("yamlText: " + yamlText);
                 domElement.innerHTML = "<pre>" + yamlText + "</pre>";
                 if(yamlText && yamlText.length > 0) {
-                    // if the yaml starts with RulesVersion: it means it is a rule yaml.
-                    if(yamlText.startsWith("RulesVersion:")) {
+                    // if the yaml contains the RulesVersion: it means it is a rule yaml.
+                    if(yamlObj["RulesVersion"]) {
                         refinery_rule_editor.setValue(yamlText);
-                    } else if(yamlText.startsWith("General:")) {
+                    } else if(yamlObj["General"]) {
                         refinery_editor.setValue(yamlText);
                     }
                 }
