@@ -912,15 +912,15 @@ async function init_page() {
                 "role": "system",
                 "content": `You are a helpful assistant that generates Honeycomb Refinery rules and configurations. 
                 Validate the YAML data before outputting it. Make sure the YAML data is conform to the Honeycomb Refinery specifications.
-                You are to output the YAML data only, nothing else. Do not include any other text or comments. enclose the YAML data in \`\`\` and \`\`\` tags.`
+                You are to output the YAML data only, nothing else. Do not include any other text or comments. enclose the YAML data in \`\`\` and \`\`\` tags. When writing YAML, generate the complete rule yaml or configuration yaml.`
             },
             {
                 "role": "system",
-                "content": `Here is an example of the Refinery Rules that you can use to generate the next YAML data in case user wants to generate rules: \`\`\`yaml|n${refinery_example_rule}\`\`\``
+                "content": `When generating rule yaml, start with rule version line. here is an example of the Refinery Rules that you can use to generate the next YAML data in case user wants to generate rules: \`\`\`yaml|n${refinery_example_rule}\`\`\``
             },
             {
                 "role": "system",
-                "content": `Here is an example of the Refinery Configurations that you can use to generate the next YAML data in case user wants to generate configurations: \`\`\`yaml|n${refinery_example_config}\`\`\``
+                "content": `When generating configuration yaml, start with General section. Here is an example of the Refinery Configurations that you can use to generate the next YAML data in case user wants to generate configurations: \`\`\`yaml|n${refinery_example_config}\`\`\``
             }
         ],
         (id_prefix)=>{
@@ -958,7 +958,17 @@ async function init_page() {
                 // extract the json text from the domElement
                 console.log("dom element text: " + domElement.innerText);
                 var yamlText = domElement.innerText.match(/```(yaml)?([\S\s]*)```/)[2];
+                // trim yaml text to remove the first line if it is empty
+                yamlText = yamlText.trim();
                 domElement.innerHTML = "<pre>" + yamlText + "</pre>";
+                if(yamlText && yamlText.length > 0) {
+                    // if the yaml starts with RulesVersion: it means it is a rule yaml.
+                    if(yamlText.startsWith("RulesVersion:")) {
+                        refinery_rule_editor.setValue(yamlText);
+                    } else if(yamlText.startsWith("General:")) {
+                        refinery_editor.setValue(yamlText);
+                    }
+                }
             }
         });
 

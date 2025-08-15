@@ -232,7 +232,7 @@ export function install_otelcol(ws, version) {
                 console.log("saved the config");
                 // remove the tar.gz file
                 fs.unlinkSync(targz);
-                ws.send(JSON.stringify({html: "🟢 Installed", status: "success"}));
+                ws.send(JSON.stringify({html: "🟢 Installed: " + version, status: "success"}));
             });
         });
     });
@@ -327,7 +327,7 @@ export function install_refinery(ws,version) {
             config["refinery_installed"] = true;
             save_config(config);
             console.log("saved the config");
-            ws.send(JSON.stringify({html: "🟢 Installed", status: "success"}));
+            ws.send(JSON.stringify({html: "🟢 Installed: " + version, status: "success"}));
         });
     });
 }
