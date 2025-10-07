@@ -36,7 +36,7 @@ Error: dlopen(/Users/howardyoo/Projects/oteltester/node_modules/fast-zstd/build/
 - In that case, link the zstd dylib to the path that npm looks for. Somehow, in macos, npm tries to look for the dylib in `/usr/local/lib/libzstd.1.dylib`, but the actual location is in `/opt/homebrew/Cellar/zstd/1.5.x/lib/libzstd.1.dylib` (since have installed libzstd using brew). The version number `x` can vary, so set it accordingly as such:
 
 ```
-sudo ln -s /opt/homebrew/Cellar/zstd/1.5.6/lib/libzstd.1.5.6.dylib /usr/local/lib/libzstd.1.dylib
+sudo ln -s /opt/homebrew/Cellar/zstd/1.5.7/lib/libzstd.1.5.7.dylib /usr/local/lib/libzstd.1.dylib
 ```
 
 # Running the application locally
@@ -131,21 +131,6 @@ To stop the application, run the following command:
 ```
 OPENAI_API_KEY=<your-openai-api-key>
 OPENAI_MODEL=<your-openai-model>
-```
-- For the docker compose, edit the docker-compose.yaml and add in your OPENAI API KEY:
-```yaml
-services:
-  oteltester:
-    environment:
-      OPENAI_API_KEY: "<API-KEY-HERE>"
-      OPENAI_MODEL: "gpt-4o"
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: oteltester:latest
-    ports:
-      - "3000:3000"
-      - "3001:3001"
 ```
 - You can get the OpenAI API key from [here](https://platform.openai.com/api-keys)
 - You can get the OpenAI model from [here](https://platform.openai.com/docs/models)
