@@ -35,6 +35,77 @@ const httpsApp = express();
 const HTTPS_PORT = 3001;
 const WORK_DIR = get_workdir();
 
+// Create the zstd decompression middleware
+const zstdMiddleware = (req, res, next) => {
+  if (req.headers['content-encoding'] === 'zstd') {
+    // check for DEBUG in environment variables
+    if(process.env.DEBUG == "true") {
+      console.log('zstdMiddleware: processing zstd request');
+      console.log('zstdMiddleware: content-type:', req.headers['content-type']);
+      console.log('zstdMiddleware: content-length:', req.headers['content-length']);
+    }
+    
+    const chunks = [];
+    let receivedLength = 0;
+    
+    req.on('data', (chunk) => {
+      if(process.env.DEBUG == "true") {
+        console.log('zstdMiddleware: received chunk, size:', chunk.length);
+      }
+      receivedLength += chunk.length;
+      chunks.push(chunk);
+    });
+    
+    req.on('end', () => {
+      try {
+        const buffer = Buffer.concat(chunks);
+        if(process.env.DEBUG == "true") {
+          console.log('zstdMiddleware: total buffer size:', buffer.length);
+          console.log('zstdMiddleware: buffer (hex):', buffer.toString('hex'));
+          console.log('zstdMiddleware: first 20 bytes:', buffer.slice(0, Math.min(20, buffer.length)));
+        }
+        
+        const decompressed = zstd.decompress(buffer);
+        if(process.env.DEBUG == "true") {
+          console.log('zstdMiddleware: decompressed.');
+        }
+
+        if (req.is('application/msgpack')) {
+          req.body = decode(decompressed);
+          if(process.env.DEBUG == "true") {
+            console.log('zstdMiddleware: decoded.');
+          }
+          next();
+        } else {
+          // Try to parse as JSON if it's JSON content
+          try {
+            req.body = JSON.parse(decompressed.toString());
+          } catch {
+            req.body = decompressed.toString();
+          }
+          next();
+        }
+      } catch (err) {
+        console.error('zstdMiddleware: decompression failed:', err);
+        res.status(400).json({message: 'zstd decompression failed', error: err.message});
+      }
+    });
+    
+    req.on('error', (err) => {
+      console.error('zstdMiddleware: stream error:', err);
+      if (!res.headersSent) {
+        res.status(400).json({message: 'Request stream error'});
+      }
+    });
+    
+  } else {
+    next();
+  }
+};
+
+// Apply zstd middleware FIRST for app
+app.use(zstdMiddleware);
+
 // Middleware to serve static files from 'frontend' folder
 app.use(express.static(path.join(WORK_DIR, "./frontend")));
 app.use(express.json({limit: '10mb'}));
@@ -42,7 +113,8 @@ app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(express.text());
 app.use(compression());
 app.use(auth);
-// middleware to serve json payload as input
+// middleware 
+httpsApp.use(zstdMiddleware);
 httpsApp.use(express.static(path.join(WORK_DIR, "./frontend")));
 httpsApp.use(express.json({limit: '10mb'}));
 httpsApp.use(express.urlencoded({ limit: '10mb', extended: true }));
@@ -1034,33 +1106,6 @@ app.post("/1/events/:dataset", (req, res) => {  // Verify API key is present
   // Return success response with empty JSON payload
   // This mimics Honeycomb's events endpoint behavior
   res.status(200).send();
-});
-
-// httpsApp.use((req, res, next) => {
-app.use((req, res, next) => {
-  if (req.headers['content-encoding'] === 'zstd') {
-    const chunks = [];
-    req.on('data', (chunk) => {
-      chunks.push(chunk);
-    });
-    req.on('end', () => {
-      const buffer = Buffer.concat(chunks);
-      const decompressed = zstd.decompress(buffer);
-
-      if (req.is('application/msgpack')) {
-        try {
-          req.body = decode(decompressed);
-          next();
-        } catch (err) {
-          console.log(err.message);
-          res.status(400).json({message: 'Invalid MessagePack Payload'});
-          return;
-        }
-      }
-    });
-  } else {
-    next();
-  }
 });
 
 // api endpoint /v1/batch/{dataset}
