@@ -274,11 +274,24 @@ function init_otelcol_out_ws(config) {
                 if (document.getElementById("otelcol_send_auto").value == "true") {
                     var endpoint = document.getElementById("otelcol_send_endpoint").value;
                     var apikey = document.getElementById("otelcol_send_apikey").value;
+                    
                     var json_data = otelcol_json_output.getValue();
                     var headers = {
                         'Content-Type': 'application/json',
                         'x-honeycomb-team': apikey
                     }
+
+                    // process the headers text, and if exists, add them to the headers object
+                    // format: key:value,key2:value2...
+                    var headers_text = document.getElementById("otelcol_send_headers").value;
+                    if(headers_text) {
+                        var header_pairs = headers_text.split(",");
+                        for(var i=0; i < header_pairs.length; i++) {
+                            var header_keyvalue = header_pairs[i].split(":");
+                            headers[header_keyvalue[0]] = header_keyvalue[1];
+                        }
+                    }
+
                     // check the json data for resource attribute service.name.
                     var service_name = null;
                     // THIS IS A SPECIAL CASE FOR METRICS DATA ONLY.
@@ -1268,6 +1281,14 @@ async function init_page() {
                     'Content-Type': 'application/json',
                     'x-honeycomb-team': apikey
                 }
+                var headers_text = document.getElementById("otelcol_send_headers").value;
+                if(headers_text) {
+                    var header_pairs = headers_text.split(",");
+                    for(var i=0; i < header_pairs.length; i++) {
+                        var header_keyvalue = header_pairs[i].split(":");
+                        headers[header_keyvalue[0]] = header_keyvalue[1];
+                    }
+                }
                 // check the json data for resource attribute service.name.
                 var service_name = null;
                 // THIS IS A SPECIAL CASE FOR METRICS DATA ONLY.
@@ -1350,6 +1371,15 @@ async function init_page() {
                     'Content-Type': 'application/json',
                     'x-honeycomb-team': apikey
                 }
+                var headers_text = document.getElementById("otel_input_headers").value;
+                if(headers_text) {
+                    var header_pairs = headers_text.split(",");
+                    for(var i=0; i < header_pairs.length; i++) {
+                        var header_keyvalue = header_pairs[i].split(":");
+                        headers[header_keyvalue[0]] = header_keyvalue[1];
+                    }
+                }
+                // console.log("headers", headers);
                 // check the json data for resource attribute service.name.
                 var service_name = null;
                 // THIS IS A SPECIAL CASE FOR METRICS DATA ONLY.

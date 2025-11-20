@@ -127,6 +127,10 @@
           Inputs <select id='otel_inputs'></select>
         </div>
         <div class="template-buttons">
+          <!-- header will get added to the request headers. format: key:value,key2:value2... -->
+          Headers <input type="text" id="otel_input_headers" autocomplete="off" size="50"/> (key:value,...)
+        </div>
+        <div class="template-buttons">
           New trace and span id <input type="checkbox" id="otel_input_new_trace_span_id" name="otel_input_new_trace_span_id" checked/>
           Re-time timestamps <input type="checkbox" id="otel_input_strip_timestamps" name="otel_input_strip_timestamps" checked/>
           Timer <select id="otel_input_timer">

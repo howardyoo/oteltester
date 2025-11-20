@@ -1,8 +1,8 @@
 version: 1.0.0
 collector_home: ./runtime
-collector_version: 0.120.0
+collector_version: 0.139.0
 refinery_home: ./runtime
-refinery_version: 2.9.2
+refinery_version: 2.9.7
 otel_collector:
   bin_path: ./runtime/otelcol-contrib
   config_path: ./runtime/otelcol-config.yml

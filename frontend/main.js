@@ -280,7 +280,12 @@ function refresh_main() {
       otelcol_html += "<option value='false' selected='true'>off</option>";
       otelcol_html += "</select>";
       otelcol_html += " Results <select id='otelcol_results'></select>";  // result cache.
-      otelcol_html += "</div></form><span id='otelcol_send_status'></span></div></div>";
+      otelcol_html += "</div>";
+      otelcol_html += "<div class='template-buttons'>";
+      otelcol_html += "Headers <input type='text' id='otelcol_send_headers' autocomplete='off' size='50'/>  (key:value,...) <span id='otelcol_send_status'></span>";
+      otelcol_html += "</div>";
+      otelcol_html += "</form></div>";
+      otelcol_html += "</div>";
       
       document.getElementById('otelcol').innerHTML = otelcol_html;
 

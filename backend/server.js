@@ -795,6 +795,17 @@ app.post("/api/send_json", async (req, res) => {
   var url = req.query["url"];
   var json = req.body;
   var headers = {};
+  // copy the headers from the request headers
+  for(var header in req.headers) {
+    if(
+      header.toLowerCase() != "accept-encoding" && 
+      header.toLowerCase() != "accept-language" &&
+      header.toLowerCase() != "content-length" &&
+      header.toLowerCase() != "content-type"
+    ) {
+      headers[header] = req.headers[header];
+    }
+  }
   headers['Content-Type'] = 'application/json';
   if(req.headers['x-honeycomb-team']) {
     headers['x-honeycomb-team'] = req.headers['x-honeycomb-team'];
@@ -802,7 +813,7 @@ app.post("/api/send_json", async (req, res) => {
   if(req.headers['x-honeycomb-dataset']) {
     headers['x-honeycomb-dataset'] = req.headers['x-honeycomb-dataset'];
   }
-  
+  console.log("headers", headers);
   if(Array.isArray(json)) {
     try {
       var total = 0;
