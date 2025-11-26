@@ -1021,7 +1021,15 @@ app.post("/v1/metrics", (req, res) => {
   console.log("Received OTLP JSON - Metrics");
   // send the request body to the otelcol output websocket,
   // if the socket is connected.
-  if(otelcol_out_ws) {
+  // console.log("origin: ", req.headers.origin);
+  if(req.headers.origin == "http://localhost:3000") {
+    if(refinery_out_ws) {
+      // format the JSON string with indentations
+      // add /n at the end of the string
+      refinery_out_ws.send(JSON.stringify(req.body, null, 2) + "\n");
+    }
+  }
+  else if(otelcol_out_ws) {
     otelcol_out_ws.send(JSON.stringify(req.body, null, 2) + "\n");
   }
   res.status(200).send();
@@ -1032,7 +1040,13 @@ app.post("/v1/logs", (req, res) => {
   console.log("Received OTLP JSON - Logs");
   // send the request body to the otelcol output websocket,
   // if the socket is connected.
-  if(otelcol_out_ws) {
+  if(req.headers.origin == "http://localhost:3000") {
+    if(refinery_out_ws) {
+      // format the JSON string with indentations
+      // add /n at the end of the string
+      refinery_out_ws.send(JSON.stringify(req.body, null, 2) + "\n");
+    }
+  } else if(otelcol_out_ws) {
     otelcol_out_ws.send(JSON.stringify(req.body, null, 2) + "\n");
   }
   res.status(200).send();
@@ -1148,6 +1162,8 @@ app.post("/1/batch/:dataset", (req, res) => {
 
 httpsApp.post("/v1/traces", (req, res) => {
 
+  console.log("Received HTTP request - Traces");
+
   // Verify API key is present
   const apiKey = req.header("x-honeycomb-team");
   if (!apiKey) {
@@ -1178,6 +1194,8 @@ httpsApp.post("/v1/traces", (req, res) => {
 
 httpsApp.post("/v1/metrics", (req, res) => {
 
+  console.log("Received HTTP request - Metrics");
+
   // Verify API key is present
   const apiKey = req.header("x-honeycomb-team");
   if (!apiKey) {
@@ -1207,6 +1225,8 @@ httpsApp.post("/v1/metrics", (req, res) => {
 });
 
 httpsApp.post("/v1/logs", (req, res) => {
+
+  console.log("Received HTTP request - Logs");
 
   // Verify API key is present
   const apiKey = req.header("x-honeycomb-team");
