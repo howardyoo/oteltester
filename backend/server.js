@@ -1019,10 +1019,12 @@ app.post("/v1/traces", (req, res) => {
 // receive the otelcol output which is OTLP JSON on http
 app.post("/v1/metrics", (req, res) => {
   console.log("Received OTLP JSON - Metrics");
-  // send the request body to the otelcol output websocket,
-  // if the socket is connected.
-  // console.log("origin: ", req.headers.origin);
-  if(req.headers.origin == "http://localhost:3000") {
+
+  // if the request is from otelteseter, send request body to refinery output websocket
+  if(
+    req.headers['x-request-from'] == 'oteltester' || 
+    req.headers.origin == "http://localhost:3000"
+  ) {
     if(refinery_out_ws) {
       // format the JSON string with indentations
       // add /n at the end of the string
@@ -1040,7 +1042,10 @@ app.post("/v1/logs", (req, res) => {
   console.log("Received OTLP JSON - Logs");
   // send the request body to the otelcol output websocket,
   // if the socket is connected.
-  if(req.headers.origin == "http://localhost:3000") {
+  if(
+    req.headers['x-request-from'] == 'oteltester' || 
+    req.headers.origin == "http://localhost:3000"
+  ) {
     if(refinery_out_ws) {
       // format the JSON string with indentations
       // add /n at the end of the string

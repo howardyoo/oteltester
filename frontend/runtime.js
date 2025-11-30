@@ -1279,7 +1279,8 @@ async function init_page() {
                 document.getElementById("otelcol_send_status").innerHTML = "Sending...";
                 var headers = {
                     'Content-Type': 'application/json',
-                    'x-honeycomb-team': apikey
+                    'x-honeycomb-team': apikey,
+                    'x-request-from': 'oteltester',
                 }
                 var headers_text = document.getElementById("otelcol_send_headers").value;
                 if(headers_text) {
@@ -1369,7 +1370,7 @@ async function init_page() {
                 var apikey = document.getElementById("otel_input_send_apikey").value;
                 var headers = {
                     'Content-Type': 'application/json',
-                    'x-honeycomb-team': apikey
+                    'x-honeycomb-team': apikey,
                 }
                 var headers_text = document.getElementById("otel_input_headers").value;
                 if(headers_text) {
