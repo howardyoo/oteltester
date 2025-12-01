@@ -253,6 +253,7 @@ function refresh_main() {
       }
       otelcol_html += "<input type='button' id='otelcol_save' value='💾 Save Config' disabled='true'>";
       otelcol_html += "<input type='button' id='otelcol_reload' value='⏎ Reload Config'>";
+      otelcol_html += "<input type='button' id='otelcol_reset' value='Reset Config'>";
       otelcol_html += "<input type='button' id='otelcol_clear' value='🧹 Clear Outputs'>";
       otelcol_html += "<input type='button' id='otelcol_otelbin' value='📡 Export to otelbin.io'>";
       otelcol_html += "<input type='button' id='otelcol_receivers' value='▸ Receivers'>";
@@ -325,6 +326,7 @@ function refresh_main() {
         refinery_html += "<input type='button' id='refinery_stop' value='⏹ Stop' disabled='true'>";
       }
       refinery_html += "<input type='button' id='refinery_save' value='💾 Save Config' disabled='true'>";
+      refinery_html += "<input type='button' id='refinery_reset' value='Reset Config'>";
       refinery_html += "<input type='button' id='refinery_clear' value='🧹 Clear Outputs'></div>";
       refinery_html += "<div class='template-section'>";
       refinery_html += "<div><h4>📏 " + refinery.rule_path + " <span class='header-span'>Version <select id='refinery_rule_history'></select></span></h4>";

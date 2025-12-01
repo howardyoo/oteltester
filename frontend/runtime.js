@@ -1159,6 +1159,58 @@ async function init_page() {
                     .catch(error => console.error('Error saving refinery config:', error));
             }, { passive: true});
 
+            // reset config
+            document.getElementById("refinery_reset").addEventListener("click", event => {
+                console.log("Resetting... refinery config");
+                // get the default config from the server
+                fetch('/api/get_yaml?path=./examples/refinery-config.yml')
+                    .then(response => response.text())
+                    .then(yaml => {
+                        // save the config to the server
+                        fetch('/api/save_yaml?path=' + refinery.config_path, {
+                            method: 'POST',
+                            body: yaml,
+                            headers: {
+                                'Content-Type': 'text/plain'
+                            }
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            console.log(data.message);
+                            refinery_editor.setValue(yaml);
+                            refinery_config_current = yaml;
+                            // append the config to the history
+                            append_refinery_config_history(yaml);
+                            document.getElementById("refinery_save").disabled = true;
+
+                            fetch('/api/get_yaml?path=./examples/refinery-rule.yml')
+                                .then(response => response.text())
+                                .then(yaml => {
+                                    fetch('/api/save_yaml?path=' + refinery.rule_path, {
+                                        method: 'POST',
+                                        body: yaml,
+                                        headers: {
+                                            'Content-Type': 'text/plain'
+                                        }
+                                    })
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        console.log(data.message);
+                                        refinery_rule_editor.setValue(yaml);
+                                        refinery_rule_current = yaml;
+                                        // append the rule to the history
+                                        append_refinery_rule_history(yaml);
+                                        document.getElementById("refinery_save").disabled = true;
+                                    })
+                                    .catch(error => console.error('Error saving refinery rule:', error));
+                                })
+                                .catch(error => console.error('Error reading default refinery rule:', error));
+                        })
+                        .catch(error => console.error('Error saving refinery config:', error));
+                    })
+                    .catch(error => console.error('Error reading default refinery config:', error));
+            }, { passive: true});
+
             document.getElementById("refinery_clear").addEventListener("click", event => {
                 console.log("Clearing... refinery outputs and results");
                 // document.getElementById("refinery_output").value = "";
@@ -1231,6 +1283,35 @@ async function init_page() {
                 var config = otelcol_editor.getValue();
                 var url = get_otelbin_url(config);
                 window.open(url, '_blank');
+            }, { passive: true});
+
+            // reset config
+            document.getElementById("otelcol_reset").addEventListener("click", event => {
+                console.log("Resetting... otel collector config");
+                // get the default config from the server
+                fetch('/api/get_yaml?path=./examples/otelcol-config.yml')
+                    .then(response => response.text())
+                    .then(yaml => {
+                        // save the config to the server
+                        fetch('/api/save_yaml?path=' + otel_collector.config_path, {
+                            method: 'POST',
+                            body: yaml,
+                            headers: {
+                                'Content-Type': 'text/plain'
+                            }
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            console.log(data.message);
+                            otelcol_editor.setValue(yaml);
+                            otelcol_config_current = yaml;
+                            // append the config to the history
+                            append_otelcol_config_history(yaml);
+                            document.getElementById("otelcol_save").disabled = true;
+                        })
+                        .catch(error => console.error('Error saving otelcol config:', error));
+                    })
+                    .catch(error => console.error('Error reading default otelcol config:', error));
             }, { passive: true});
 
             // reload config

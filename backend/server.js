@@ -1022,8 +1022,7 @@ app.post("/v1/metrics", (req, res) => {
 
   // if the request is from otelteseter, send request body to refinery output websocket
   if(
-    req.headers['x-request-from'] == 'oteltester' || 
-    req.headers.origin == "http://localhost:3000"
+    req.headers['x-request-from'] == 'oteltester'
   ) {
     if(refinery_out_ws) {
       // format the JSON string with indentations
@@ -1043,8 +1042,7 @@ app.post("/v1/logs", (req, res) => {
   // send the request body to the otelcol output websocket,
   // if the socket is connected.
   if(
-    req.headers['x-request-from'] == 'oteltester' || 
-    req.headers.origin == "http://localhost:3000"
+    req.headers['x-request-from'] == 'oteltester'
   ) {
     if(refinery_out_ws) {
       // format the JSON string with indentations
