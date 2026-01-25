@@ -19,6 +19,7 @@ import { readdirSync, unlinkSync } from "fs";
 import auth from "./auth.js";
 import Ajv from "ajv";
 import fs from "fs";
+import { handleMCPRequest, setWebSocketRefs, captureOutputForTask, getActiveOutputTasks } from "./mcp.js";
 
 // OTEL schema validator init.
 const schema = JSON.parse(fs.readFileSync("./backend/schema/otel-schema.json", "utf8"));
@@ -1008,10 +1009,16 @@ app.get("/api/refinery_install", (req, res) => {
 // receive the otelcol output which is OTLP JSON on http
 app.post("/v1/traces", (req, res) => {
   console.log("Received OTLP JSON - Traces");
+  const output = JSON.stringify(req.body, null, 2) + "\n";
   // send the request body to the otelcol output websocket,
   // if the socket is connected.
   if(otelcol_out_ws) {
-    otelcol_out_ws.send(JSON.stringify(req.body, null, 2) + "\n");
+    otelcol_out_ws.send(output);
+  }
+  // Forward to active MCP output collection tasks
+  const activeTasks = getActiveOutputTasks('otelcol');
+  for (const taskId of activeTasks) {
+    captureOutputForTask(taskId, 'otlp_traces', output);
   }
   res.status(200).send();
 });
@@ -1019,6 +1026,7 @@ app.post("/v1/traces", (req, res) => {
 // receive the otelcol output which is OTLP JSON on http
 app.post("/v1/metrics", (req, res) => {
   console.log("Received OTLP JSON - Metrics");
+  const output = JSON.stringify(req.body, null, 2) + "\n";
 
   // if the request is from otelteseter, send request body to refinery output websocket
   if(
@@ -1027,11 +1035,21 @@ app.post("/v1/metrics", (req, res) => {
     if(refinery_out_ws) {
       // format the JSON string with indentations
       // add /n at the end of the string
-      refinery_out_ws.send(JSON.stringify(req.body, null, 2) + "\n");
+      refinery_out_ws.send(output);
+    }
+    // Forward to active MCP refinery output collection tasks
+    const activeTasks = getActiveOutputTasks('refinery');
+    for (const taskId of activeTasks) {
+      captureOutputForTask(taskId, 'otlp_metrics', output);
     }
   }
   else if(otelcol_out_ws) {
-    otelcol_out_ws.send(JSON.stringify(req.body, null, 2) + "\n");
+    otelcol_out_ws.send(output);
+    // Forward to active MCP otelcol output collection tasks
+    const activeTasks = getActiveOutputTasks('otelcol');
+    for (const taskId of activeTasks) {
+      captureOutputForTask(taskId, 'otlp_metrics', output);
+    }
   }
   res.status(200).send();
 });
@@ -1039,6 +1057,7 @@ app.post("/v1/metrics", (req, res) => {
 // receive the otelcol output which is OTLP JSON on http
 app.post("/v1/logs", (req, res) => {
   console.log("Received OTLP JSON - Logs");
+  const output = JSON.stringify(req.body, null, 2) + "\n";
   // send the request body to the otelcol output websocket,
   // if the socket is connected.
   if(
@@ -1047,10 +1066,20 @@ app.post("/v1/logs", (req, res) => {
     if(refinery_out_ws) {
       // format the JSON string with indentations
       // add /n at the end of the string
-      refinery_out_ws.send(JSON.stringify(req.body, null, 2) + "\n");
+      refinery_out_ws.send(output);
+    }
+    // Forward to active MCP refinery output collection tasks
+    const activeTasks = getActiveOutputTasks('refinery');
+    for (const taskId of activeTasks) {
+      captureOutputForTask(taskId, 'otlp_logs', output);
     }
   } else if(otelcol_out_ws) {
-    otelcol_out_ws.send(JSON.stringify(req.body, null, 2) + "\n");
+    otelcol_out_ws.send(output);
+    // Forward to active MCP otelcol output collection tasks
+    const activeTasks = getActiveOutputTasks('otelcol');
+    for (const taskId of activeTasks) {
+      captureOutputForTask(taskId, 'otlp_logs', output);
+    }
   }
   res.status(200).send();
 });
@@ -1059,6 +1088,8 @@ app.post("/v1/logs", (req, res) => {
 server.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
   console.log(`Websocket server running at ws://localhost:${PORT}/ws`);
+  console.log(`MCP endpoint available at http://localhost:${PORT}/mcp`);
+  initializeMCP();
 });
 
 /* ----------------------------------
@@ -1152,10 +1183,16 @@ app.post("/1/batch/:dataset", (req, res) => {
 
   // send the request body to the refinery output websocket,
   // if the socket is connected.
+  const output = JSON.stringify(req.body, null, 2) + "\n";
   if(refinery_out_ws) {
     // format the JSON string with indentations
     // add /n at the end of the string
-    refinery_out_ws.send(JSON.stringify(req.body, null, 2) + "\n");
+    refinery_out_ws.send(output);
+  }
+  // Forward to active MCP refinery output collection tasks
+  const activeTasks = getActiveOutputTasks('refinery');
+  for (const taskId of activeTasks) {
+    captureOutputForTask(taskId, 'batch', output);
   }
 
   // Return success response with empty JSON payload
@@ -1259,7 +1296,39 @@ httpsApp.post("/v1/logs", (req, res) => {
   res.status(200).send();
 });
 
+// MCP endpoint - Model Context Protocol interface
+app.post("/mcp", (req, res) => {
+  handleMCPRequest(req, res);
+});
+
+// MCP task status endpoint for polling async operations
+app.get("/mcp/tasks/:taskId", (req, res) => {
+  const { taskId } = req.params;
+  handleMCPRequest({
+    body: {
+      jsonrpc: '2.0',
+      id: req.query.id || '1',
+      method: 'tasks/get',
+      params: { taskId }
+    }
+  }, res);
+});
+
+// Set up MCP WebSocket references after servers start
+// This will be called after server.listen to ensure WebSocket refs are available
+function initializeMCP() {
+  setWebSocketRefs({
+    otelcol_out_ws,
+    refinery_out_ws,
+    otelcol_stdout_ws,
+    refinery_stdout_ws,
+    otelcol_setup_ws,
+    refinery_setup_ws
+  });
+}
+
 // https port listen
 httpsServer.listen(HTTPS_PORT, () => {
   console.log(`HTTPS Server running at https://localhost:${HTTPS_PORT}`);
+  initializeMCP();
 });
