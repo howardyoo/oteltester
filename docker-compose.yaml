@@ -7,6 +7,8 @@ services:
       context: .
       dockerfile: Dockerfile
     image: oteltester:latest
+    volumes:
+      - ./data:/app/data:ro
     ports:
       - "3000:3000"
       - "3001:3001"

@@ -53,7 +53,7 @@ or
 npm run dev
 ```
 
-# Running the application in docker
+# Running the application in docker (as docker-compose)
 Make sure you have docker installed.
 run the following command to start the application:
 
@@ -65,6 +65,8 @@ To stop the application, run the following command:
 ```
 ./stop.sh
 ```
+
+**./data directory will be mounted as /app/data in the docker, making any data available in the tester**
 
 # Accessing the application
 - use the browser to access the application at `http://localhost:3000/`

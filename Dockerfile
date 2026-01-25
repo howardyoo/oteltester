@@ -17,6 +17,9 @@ WORKDIR /app
 # copy everything excluding node_modules
 RUN mkdir runtime
 RUN mkdir saved
+# for any data that needs to be available as input (e.g. logs)
+RUN mkdir data
+
 COPY backend ./backend
 COPY frontend ./frontend
 COPY certs ./certs
