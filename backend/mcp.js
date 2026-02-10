@@ -2126,6 +2126,56 @@ function handleResourcesList(id, res) {
       name: 'Refinery Console Output',
       description: 'Latest console output (stdout/stderr) from the Refinery process',
       mimeType: 'text/plain'
+    },
+
+    // Skills (guidance for AI agents on how to use oteltester)
+    {
+      uri: 'skills://list',
+      name: 'Oteltester Skills Index',
+      description: 'List all available skill resources for learning how to use oteltester effectively',
+      mimeType: 'application/json'
+    },
+    {
+      uri: 'skills://overview',
+      name: 'Oteltester Overview',
+      description: 'Executive overview of oteltester capabilities and when to use each skill',
+      mimeType: 'application/json'
+    },
+    {
+      uri: 'skills://installation',
+      name: 'Installation Skill',
+      description: 'How to install and run different versions of OTEL Collector and Honeycomb Refinery',
+      mimeType: 'application/json'
+    },
+    {
+      uri: 'skills://configuration',
+      name: 'Configuration Skill',
+      description: 'How to formulate YAML configs for OTEL Collector and Refinery (config + rules)',
+      mimeType: 'application/json'
+    },
+    {
+      uri: 'skills://testing-workflow',
+      name: 'Testing Workflow Skill',
+      description: 'Submit OTLP JSON, monitor logs/results, and conditionally re-submit to Refinery',
+      mimeType: 'application/json'
+    },
+    {
+      uri: 'skills://collector-verification',
+      name: 'Collector Verification Skill',
+      description: 'How to verify correctness of OTEL Collector config (receiving, processing, exporting)',
+      mimeType: 'application/json'
+    },
+    {
+      uri: 'skills://refinery-verification',
+      name: 'Refinery Verification Skill',
+      description: 'How to verify correctness of Refinery sampling rules',
+      mimeType: 'application/json'
+    },
+    {
+      uri: 'skills://honeycomb-forwarding',
+      name: 'Honeycomb Forwarding Skill',
+      description: 'How to send data to Honeycomb via ingestion API (requires API key from user)',
+      mimeType: 'application/json'
     }
   ];
 
@@ -2179,6 +2229,11 @@ async function handleResourcesRead(id, params, res) {
       content = getOtelcolConsoleResource();
     } else if (uri === 'console://refinery/latest') {
       content = getRefineryConsoleResource();
+    } else if (uri === 'skills://list') {
+      content = getSkillsListResource();
+    } else if (uri.startsWith('skills://')) {
+      const skillName = uri.replace('skills://', '');
+      content = getSkillResource(skillName);
     } else {
       return res.json({
         jsonrpc: '2.0',
@@ -2761,5 +2816,147 @@ function getRefineryConsoleResource() {
     text: result.lines.length > 0 
       ? result.lines.map(l => `[${l.timestamp}] ${l.line}`).join('\n')
       : 'No console output available. Start the Refinery process first.'
+  };
+}
+
+/**
+ * Skills Resources - Guidance for AI agents on how to use oteltester effectively
+ */
+
+const SKILLS = {
+  list: {
+    skills: [
+      { uri: 'skills://overview', name: 'Overview', description: 'Executive overview of oteltester capabilities' },
+      { uri: 'skills://installation', name: 'Installation', description: 'Install and run different versions of OTEL Collector and Refinery' },
+      { uri: 'skills://configuration', name: 'Configuration', description: 'Formulate YAML configs for OTEL Collector and Refinery' },
+      { uri: 'skills://testing-workflow', name: 'Testing Workflow', description: 'Submit OTLP JSON, monitor logs, re-submit to Refinery' },
+      { uri: 'skills://collector-verification', name: 'Collector Verification', description: 'Verify OTEL Collector config correctness' },
+      { uri: 'skills://refinery-verification', name: 'Refinery Verification', description: 'Verify Refinery sampling rules' },
+      { uri: 'skills://honeycomb-forwarding', name: 'Honeycomb Forwarding', description: 'Send data to Honeycomb (requires API key)' }
+    ],
+    note: 'Read these skills to learn how to use oteltester. Start with skills://overview.'
+  },
+  overview: {
+    purpose: 'oteltester is a web application for testing OpenTelemetry Collector and Honeycomb Refinery. AI agents can use it programmatically via MCP.',
+    capabilities: [
+      '1. Install and run different versions of OTEL Collector and Honeycomb Refinery',
+      '2. Formulate YAML configurations for both OTEL Collector (receivers, processors, exporters) and Refinery (config + rules)',
+      '3. Submit OTLP JSON (traces, metrics, logs) into the collector; monitor logs and output; conditionally re-submit to Refinery for sampling rule testing',
+      '4. Verify correctness of OTEL Collector configuration (receiving, processing, exporting) and OTLP JSON payloads',
+      '5. Verify correctness of Refinery sampling rules when that is the user\'s goal',
+      '6. Optionally send data to Honeycomb (requires ingestion API key from user)'
+    ],
+    recommendedOrder: ['skills://installation', 'skills://configuration', 'skills://testing-workflow', 'skills://collector-verification', 'skills://refinery-verification', 'skills://honeycomb-forwarding'],
+    quickStart: 'Read system://status first to check installation state. Then read skills://installation if binaries need to be installed.'
+  },
+  installation: {
+    title: 'Installation and Version Management',
+    description: 'How to install and run different versions of OpenTelemetry Collector and Honeycomb Refinery.',
+    tools: ['get_otelcol_versions', 'get_refinery_versions', 'get_otelcol_version', 'get_refinery_version', 'install_otelcol', 'install_refinery', 'start_otelcol', 'start_refinery', 'stop_process'],
+    resources: ['system://status', 'versions://available'],
+    steps: [
+      { step: 1, action: 'Check current state', tool: 'get_config or read system://status', note: 'See if collector/refinery are installed and which versions' },
+      { step: 2, action: 'Get available versions', tool: 'get_otelcol_versions or get_refinery_versions', note: 'Or read versions://available for both' },
+      { step: 3, action: 'Install desired version', tool: 'install_otelcol or install_refinery', note: 'Async operation - poll task until complete' },
+      { step: 4, action: 'Start processes', tool: 'start_otelcol or start_refinery', note: 'Start after config is ready. Processes read from config_path in config.yaml' }
+    ],
+    note: 'Config paths are in config.yaml (otel_collector.config_path, refinery.config_path, refinery.rule_path). Save configs before starting.'
+  },
+  configuration: {
+    title: 'Configuration Formulation',
+    description: 'How to formulate YAML configurations for OTEL Collector and Refinery (config + rules).',
+    tools: ['get_yaml', 'save_yaml', 'get_config', 'save_config', 'get_otelcol_modules'],
+    resources: ['config://otelcol', 'config://refinery', 'modules://otelcol'],
+    otelCollector: {
+      structure: 'receivers, processors, exporters, extensions; service.pipelines binds them',
+      configPath: 'From config.otel_collector.config_path (e.g. runtime/otelcol-config.yml)',
+      modules: 'Use get_otelcol_modules or modules://otelcol to discover available receivers, processors, exporters',
+      examplePipelines: 'traces, metrics, logs pipelines each specify receivers, processors, exporters'
+    },
+    refinery: {
+      configPath: 'From config.refinery.config_path (e.g. runtime/refinery-config.yml)',
+      rulePath: 'From config.refinery.rule_path (e.g. runtime/refinery-rule.yml)',
+      note: 'Refinery needs both config (main settings) and rules (sampling rules)'
+    },
+    steps: [
+      { step: 1, action: 'Read current config', tool: 'get_yaml with path from config', note: 'Or read config://otelcol / config://refinery' },
+      { step: 2, action: 'Save new config', tool: 'save_yaml', note: 'Updates file; use refresh_process to reload without restart (otelcol: HUP, refinery: USR1)' },
+      { step: 3, action: 'Validate structure', note: 'Read config://otelcol for parsed pipeline structure' }
+    ]
+  },
+  'testing-workflow': {
+    title: 'Testing Workflow',
+    description: 'Submit OTLP JSON, monitor logs and results, conditionally re-submit to Refinery.',
+    tools: ['send_otel_json', 'get_latest_otelcol_output', 'get_latest_refinery_output', 'forward_otelcol_output_to_refinery', 'get_otelcol_console_output', 'get_refinery_console_output', 'search_console_output'],
+    resources: ['output://otelcol/latest', 'output://refinery/latest', 'console://otelcol/latest', 'console://refinery/latest', 'templates://list', 'saved://list'],
+    workflow: [
+      { phase: 'Setup', actions: ['Ensure otelcol is running (start_otelcol)', 'Optional: start refinery if testing sampling'] },
+      { phase: 'Submit', actions: ['Get OTLP JSON from templates://<name> or saved://<name> or provided by user', 'send_otel_json to collector OTLP HTTP endpoint (e.g. http://localhost:4318)'] },
+      { phase: 'Monitor', actions: ['get_otelcol_console_output or read console://otelcol/latest', 'get_latest_otelcol_output or read output://otelcol/latest', 'search_console_output for "error", "failed", "warn"'] },
+      { phase: 'Validate', actions: ['Compare output to expected - check traces/metrics/logs arrived correctly', 'If testing refinery: forward_otelcol_output_to_refinery, then check output://refinery/latest'] }
+    ],
+    otlpEndpoint: 'Collector OTLP HTTP is typically http://localhost:4318. Check endpoints://info or system://status.'
+  },
+  'collector-verification': {
+    title: 'OTEL Collector Configuration Verification',
+    description: 'Verify correctness of OTEL Collector config: receiving, processing, and exporting.',
+    tools: ['get_otelcol_console_output', 'get_latest_otelcol_output', 'search_console_output', 'send_otel_json'],
+    resources: ['config://otelcol', 'output://otelcol/latest', 'console://otelcol/latest', 'schema://otel'],
+    verificationSteps: [
+      { area: 'Receiving', check: 'Data arrives at collector', action: 'Send known OTLP JSON via send_otel_json; check output://otelcol/latest for matching data' },
+      { area: 'Processing', check: 'Processors run correctly', action: 'Check console for errors; verify output shape matches processor expectations (e.g. batch, filter)' },
+      { area: 'Exporting', check: 'Data reaches exporter', action: 'If exporter is debug, check output buffer. If OTLP exporter, verify target receives data' }
+    ],
+    commonIssues: [
+      'Invalid YAML: check console for parse errors',
+      'Missing modules: use get_otelcol_modules to verify module names',
+      'Pipeline mismatch: receivers/processors/exporters in pipeline must match defined components'
+    ]
+  },
+  'refinery-verification': {
+    title: 'Refinery Sampling Rules Verification',
+    description: 'Verify correctness of Refinery sampling rules.',
+    tools: ['forward_otelcol_output_to_refinery', 'get_latest_otelcol_output', 'get_latest_refinery_output', 'get_refinery_console_output'],
+    resources: ['config://refinery', 'output://otelcol/latest', 'output://refinery/latest', 'console://refinery/latest'],
+    workflow: [
+      { step: 1, action: 'Ensure refinery is running with desired rules', note: 'Refinery reads config + rule_path on startup' },
+      { step: 2, action: 'Send or forward traces to refinery', note: 'Use forward_otelcol_output_to_refinery to send collector output, or send_otel_json to refinery HTTP (e.g. http://localhost:8080)' },
+      { step: 3, action: 'Compare otelcol vs refinery output', note: 'Sampling should reduce trace count; verify kept vs dropped matches rule logic' },
+      { step: 4, action: 'Check refinery console', note: 'Use get_refinery_console_output or search_console_output for sampling decisions' }
+    ]
+  },
+  'honeycomb-forwarding': {
+    title: 'Sending Data to Honeycomb',
+    description: 'Forward collected or refined data to Honeycomb. Requires ingestion API key from the user.',
+    tools: ['forward_output_to_target', 'get_latest_otelcol_output', 'get_latest_refinery_output'],
+    resources: ['output://otelcol/latest', 'output://refinery/latest'],
+    honeycombEndpoint: 'https://api.honeycomb.io',
+    headers: { 'x-honeycomb-team': 'API key (ask user for it)', 'x-honeycomb-dataset': 'Optional dataset name' },
+    steps: [
+      { step: 1, action: 'Get API key from user', note: 'Agents cannot access secrets. Ask: "Please provide your Honeycomb ingestion API key to forward data."' },
+      { step: 2, action: 'Forward output', tool: 'forward_output_to_target', args: { source: 'otelcol or refinery', targetUrl: 'https://api.honeycomb.io', headers: { 'x-honeycomb-team': '<api-key>' } } },
+      { step: 3, action: 'Verify', note: 'Check response status; data should appear in Honeycomb within seconds' }
+    ],
+    note: 'Config may have send_apikey; agents should prefer user-provided key for security. Never log or expose API keys.'
+  }
+};
+
+function getSkillsListResource() {
+  return {
+    uri: 'skills://list',
+    mimeType: 'application/json',
+    text: JSON.stringify(SKILLS.list, null, 2)
+  };
+}
+
+function getSkillResource(skillName) {
+  const skill = SKILLS[skillName];
+  if (!skill) {
+    throw new Error(`Skill not found: ${skillName}. Read skills://list for available skills.`);
+  }
+  return {
+    uri: `skills://${skillName}`,
+    mimeType: 'application/json',
+    text: JSON.stringify(skill, null, 2)
   };
 }

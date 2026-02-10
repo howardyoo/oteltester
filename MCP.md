@@ -446,6 +446,25 @@ Latest console output (stdout/stderr) from the OTEL Collector process.
 #### Refinery Console Output: `console://refinery/latest`
 Latest console output (stdout/stderr) from the Refinery process.
 
+#### Skills (AI Agent Guidance)
+
+Skills are read-only resources that teach AI agents how to use oteltester effectively. Read these to learn workflows, tool usage, and verification strategies.
+
+| Resource | Purpose |
+|----------|---------|
+| `skills://list` | List all available skill resources |
+| `skills://overview` | Executive overview of oteltester capabilities |
+| `skills://installation` | Install and run different versions of OTEL Collector and Refinery |
+| `skills://configuration` | Formulate YAML configs for OTEL Collector and Refinery |
+| `skills://testing-workflow` | Submit OTLP JSON, monitor logs, re-submit to Refinery |
+| `skills://collector-verification` | Verify OTEL Collector config correctness |
+| `skills://refinery-verification` | Verify Refinery sampling rules |
+| `skills://honeycomb-forwarding` | Send data to Honeycomb (requires API key from user) |
+
+**Example:** `skills://overview` returns structured JSON describing what oteltester can do and which skills to read next. Each skill includes tool references, resource references, and step-by-step workflows.
+
+**Recommended order for agents:** Start with `skills://overview`, then `skills://installation` if binaries need to be installed, then `skills://configuration` and `skills://testing-workflow` for the core testing flow.
+
 ### Resources vs Tools
 
 **When to use Resources:**

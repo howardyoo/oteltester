@@ -151,6 +151,18 @@ Resources provide efficient read-only access to system state (16 total):
 - `console://otelcol/latest` - Latest console output from OTEL Collector (200 lines)
 - `console://refinery/latest` - Latest console output from Refinery (200 lines)
 
+**Skills (AI Agent Guidance):**
+- `skills://list` - List all available skill resources
+- `skills://overview` - Executive overview of oteltester capabilities
+- `skills://installation` - How to install and run different versions of Collector and Refinery
+- `skills://configuration` - How to formulate YAML configs for both
+- `skills://testing-workflow` - Submit OTLP JSON, monitor logs, re-submit to Refinery
+- `skills://collector-verification` - How to verify Collector config correctness
+- `skills://refinery-verification` - How to verify Refinery sampling rules
+- `skills://honeycomb-forwarding` - How to send data to Honeycomb (requires API key from user)
+
+Skills provide structured guidance for AI agents to learn oteltester workflows. Start with `skills://overview`.
+
 Resources reduce AI agent tool calls by 50-75% and enable discovery patterns that weren't possible with tools alone.
 
 ## Important Implementation Details
