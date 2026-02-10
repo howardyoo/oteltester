@@ -71,6 +71,10 @@ To stop the application, run the following command:
 # Accessing the application
 - use the browser to access the application at `http://localhost:3000/`
 
+# MCP (Model Context Protocol) Interface
+
+oteltester exposes an MCP interface so AI agents (e.g. Cursor, Claude Desktop) can control it—installing binaries, managing configs, sending test data, and monitoring outputs. See **[MCP.md](./MCP.md)** for the full API and **setup instructions** (including `mcp.json` configuration and example).
+
 # Using Tester
 
 ## About OTEL JSON data

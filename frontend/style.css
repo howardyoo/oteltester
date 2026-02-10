@@ -465,3 +465,78 @@ pre {
   white-space: pre-wrap;
   font-weight: normal;
 }
+
+/* MCP Activity Notifications */
+.mcp-notification {
+  position: fixed;
+  top: 60px;
+  right: 20px;
+  width: 350px;
+  background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
+  border: 1px solid #4a90d9;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  z-index: 1001;
+  opacity: 0;
+  transform: translateX(100%);
+  transition: all 0.3s ease-out;
+  color: #ffffff;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.mcp-notification.show {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.mcp-notification-header {
+  display: flex;
+  align-items: center;
+  padding: 12px 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px 10px 0 0;
+}
+
+.mcp-notification-icon {
+  font-size: 1.4em;
+  margin-right: 10px;
+}
+
+.mcp-notification-title {
+  flex: 1;
+  font-weight: 600;
+  font-size: 0.95em;
+}
+
+.mcp-notification-close {
+  cursor: pointer;
+  font-size: 1.3em;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+  padding: 0 5px;
+}
+
+.mcp-notification-close:hover {
+  opacity: 1;
+}
+
+.mcp-notification-body {
+  padding: 12px 15px;
+  font-size: 0.85em;
+  line-height: 1.4;
+  color: #d0e0f0;
+}
+
+/* Animation for multiple notifications */
+.mcp-notification:nth-child(2) {
+  top: 140px;
+}
+
+.mcp-notification:nth-child(3) {
+  top: 220px;
+}
+
+.mcp-notification:nth-child(4) {
+  top: 300px;
+}
