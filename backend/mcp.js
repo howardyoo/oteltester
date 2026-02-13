@@ -43,6 +43,8 @@ let otelcol_setup_ws = null;
 let refinery_setup_ws = null;
 let mcp_activity_ws = null;
 let getMcpActivityWs = null;
+let getOtelcolStdoutWs = null;
+let getRefineryStdoutWs = null;
 
 // Output buffer accessor functions (will be set from server.js)
 let getLatestOtelcolOutputs = null;
@@ -72,7 +74,9 @@ export function setWebSocketRefs(refs) {
   refinery_setup_ws = refs.refinery_setup_ws;
   mcp_activity_ws = refs.mcp_activity_ws;
   getMcpActivityWs = refs.getMcpActivityWs;
-  
+  getOtelcolStdoutWs = refs.getOtelcolStdoutWs;
+  getRefineryStdoutWs = refs.getRefineryStdoutWs;
+
   // Output buffer accessor functions
   getLatestOtelcolOutputs = refs.getLatestOtelcolOutputs;
   getLatestRefineryOutputs = refs.getLatestRefineryOutputs;
@@ -273,11 +277,34 @@ function handleToolsList(id, res) {
   });
 }
 
+/**
+ * Wrap tool result in MCP content format so clients can display it.
+ * MCP spec: content array with { type: 'text', text: '...' }
+ */
+function withMcpContent(result) {
+  if (result === undefined || result === null) {
+    return { content: [{ type: 'text', text: '' }] };
+  }
+  // Already has MCP-format content
+  if (Array.isArray(result.content) && result.content.length > 0 &&
+      result.content[0]?.type === 'text' && 'text' in result.content[0]) {
+    return result;
+  }
+  const text = typeof result === 'object'
+    ? JSON.stringify(result, null, 2)
+    : String(result);
+  return {
+    ...result,
+    content: [{ type: 'text', text }]
+  };
+}
+
 async function handleToolsCall(id, params, res) {
   const { name, arguments: args } = params;
 
   try {
-    const result = await executeTool(name, args);
+    let result = await executeTool(name, args);
+    result = withMcpContent(result);
     res.json({
       jsonrpc: '2.0',
       id,
@@ -843,7 +870,11 @@ function getToolDefinitions() {
 async function executeTool(name, args) {
   switch (name) {
     case 'get_config':
-      return { config: get_config() };
+      const config = get_config();
+      return {
+        content: [{ type: 'text', text: JSON.stringify(config, null, 2) }],
+        config
+      };
     
     case 'save_config':
       save_config(args.config);
@@ -890,7 +921,11 @@ async function executeTool(name, args) {
       return await refreshProcess(args.pid);
     
     case 'get_yaml':
-      return { content: read_yaml(args.path) };
+      const yamlContent = read_yaml(args.path);
+      return {
+        content: [{ type: 'text', text: yamlContent }],
+        yaml: yamlContent
+      };
     
     case 'save_yaml':
       save_yaml(args.path, args.content);
@@ -903,7 +938,11 @@ async function executeTool(name, args) {
       return { message: 'YAML saved successfully' };
     
     case 'get_json':
-      return { content: read_json(args.path) };
+      const jsonContent = read_json(args.path);
+      return {
+        content: [{ type: 'text', text: jsonContent ? JSON.stringify(jsonContent, null, 2) : 'null' }],
+        data: jsonContent
+      };
     
     case 'save_json':
       save_json(args.path, args.content);
@@ -1046,25 +1085,32 @@ async function getRefineryVersion() {
 async function installOtelcol(version) {
   const taskId = createTask('install_otelcol', { version });
   
-  // Create a mock WebSocket-like object for installation progress
+  // Create a mock WebSocket that tees progress to both MCP task and UI setup ws.
+  // Forwarding to otelcol_setup_ws ensures the UI gets status updates and refreshes
+  // the installed version display when installation completes.
   const mockWs = {
     send: (data) => {
       const message = typeof data === 'string' ? JSON.parse(data) : data;
       updateTask(taskId, {
         output: [...(tasks.get(taskId).output || []), message]
       });
+      // Forward to UI setup WebSocket so it receives status: "success" and refreshes
+      const raw = typeof data === 'string' ? data : JSON.stringify(data);
+      if (otelcol_setup_ws && otelcol_setup_ws.readyState === 1) {
+        try { otelcol_setup_ws.send(raw); } catch (e) { /* ignore */ }
+      }
+      // Broadcast MCP activity when install completes (fallback if setup ws unavailable)
+      if (message.status === 'success') {
+        broadcastMcpActivity('otelcol_installed', { version, message: `OTEL Collector ${version} installed via MCP` });
+      }
     },
     on: () => {}
   };
   
-  // Start installation in background
-  install_otelcol(mockWs, version).catch(err => {
-    updateTask(taskId, {
-      status: 'failed',
-      error: err.message
-    });
-  });
-  
+  // Start installation in background. install_otelcol is callback-based and
+  // does not return a Promise, so we cannot chain .catch() on it.
+  install_otelcol(mockWs, version);
+
   return {
     taskId,
     message: 'Installation started',
@@ -1075,25 +1121,32 @@ async function installOtelcol(version) {
 async function installRefinery(version) {
   const taskId = createTask('install_refinery', { version });
   
-  // Create a mock WebSocket-like object for installation progress
+  // Create a mock WebSocket that tees progress to both MCP task and UI setup ws.
+  // Forwarding to refinery_setup_ws ensures the UI gets status updates and refreshes
+  // the installed version display when installation completes.
   const mockWs = {
     send: (data) => {
       const message = typeof data === 'string' ? JSON.parse(data) : data;
       updateTask(taskId, {
         output: [...(tasks.get(taskId).output || []), message]
       });
+      // Forward to UI setup WebSocket so it receives status: "success" and refreshes
+      const raw = typeof data === 'string' ? data : JSON.stringify(data);
+      if (refinery_setup_ws && refinery_setup_ws.readyState === 1) {
+        try { refinery_setup_ws.send(raw); } catch (e) { /* ignore */ }
+      }
+      // Broadcast MCP activity when install completes (fallback if setup ws unavailable)
+      if (message.status === 'success') {
+        broadcastMcpActivity('refinery_installed', { version, message: `Refinery ${version} installed via MCP` });
+      }
     },
     on: () => {}
   };
   
-  // Start installation in background
-  install_refinery(mockWs, version).catch(err => {
-    updateTask(taskId, {
-      status: 'failed',
-      error: err.message
-    });
-  });
-  
+  // Start installation in background. install_refinery is callback-based and
+  // does not return a Promise, so we cannot chain .catch() on it.
+  install_refinery(mockWs, version);
+
   return {
     taskId,
     message: 'Installation started',
@@ -1118,63 +1171,46 @@ async function startOtelcol() {
       status: 'running'
     });
     
-    // Capture stdout/stderr
+    // Capture stdout/stderr - use getter for live WebSocket ref (MCP init runs before UI connects)
+    const sendOtelcolConsole = (output) => {
+      const ws = getOtelcolStdoutWs && getOtelcolStdoutWs();
+      if (ws && ws.readyState === 1) {
+        try { ws.send(output); } catch (e) { /* ignore */ }
+      }
+    };
     childProcess.stdout.on("data", (data) => {
       const output = data.toString();
-      // Store in console buffer for MCP access
-      if (storeOtelcolConsoleOutput) {
-        storeOtelcolConsoleOutput(output);
-      }
-      if (otelcol_stdout_ws) {
-        otelcol_stdout_ws.send(output);
-      }
+      if (storeOtelcolConsoleOutput) storeOtelcolConsoleOutput(output);
+      sendOtelcolConsole(output);
       updateTask(taskId, {
         output: [...(tasks.get(taskId).output || []), { type: 'stdout', data: output }]
       });
     });
-    
     childProcess.stderr.on("data", (data) => {
       const output = data.toString();
-      // Store in console buffer for MCP access
-      if (storeOtelcolConsoleOutput) {
-        storeOtelcolConsoleOutput(output);
-      }
-      if (otelcol_stdout_ws) {
-        otelcol_stdout_ws.send(output);
-      }
+      if (storeOtelcolConsoleOutput) storeOtelcolConsoleOutput(output);
+      sendOtelcolConsole(output);
       updateTask(taskId, {
         output: [...(tasks.get(taskId).output || []), { type: 'stderr', data: output }]
       });
     });
-    
     childProcess.on("close", (code) => {
       const exitMsg = "[EXIT] otelcol exited with code " + code + "\n";
-      // Store in console buffer for MCP access
-      if (storeOtelcolConsoleOutput) {
-        storeOtelcolConsoleOutput(exitMsg);
-      }
+      if (storeOtelcolConsoleOutput) storeOtelcolConsoleOutput(exitMsg);
+      sendOtelcolConsole(exitMsg);
       updateTask(taskId, {
         status: 'completed',
         data: { ...tasks.get(taskId).data, exitCode: code }
       });
-      if (otelcol_stdout_ws) {
-        otelcol_stdout_ws.send(exitMsg);
-      }
     });
-    
     childProcess.on("error", (err) => {
       const errorMsg = "[ERROR] " + err.toString() + "\n";
-      // Store in console buffer for MCP access
-      if (storeOtelcolConsoleOutput) {
-        storeOtelcolConsoleOutput(errorMsg);
-      }
+      if (storeOtelcolConsoleOutput) storeOtelcolConsoleOutput(errorMsg);
+      sendOtelcolConsole(errorMsg);
       updateTask(taskId, {
         status: 'failed',
         error: err.toString()
       });
-      if (otelcol_stdout_ws) {
-        otelcol_stdout_ws.send(errorMsg);
-      }
     });
     
     // Broadcast process start to UI
@@ -1216,63 +1252,46 @@ async function startRefinery() {
       status: 'running'
     });
     
-    // Capture stdout/stderr
+    // Capture stdout/stderr - use getter for live WebSocket ref (MCP init runs before UI connects)
+    const sendRefineryConsole = (output) => {
+      const ws = getRefineryStdoutWs && getRefineryStdoutWs();
+      if (ws && ws.readyState === 1) {
+        try { ws.send(output); } catch (e) { /* ignore */ }
+      }
+    };
     childProcess.stdout.on("data", (data) => {
       const output = data.toString();
-      // Store in console buffer for MCP access
-      if (storeRefineryConsoleOutput) {
-        storeRefineryConsoleOutput(output);
-      }
-      if (refinery_stdout_ws) {
-        refinery_stdout_ws.send(output);
-      }
+      if (storeRefineryConsoleOutput) storeRefineryConsoleOutput(output);
+      sendRefineryConsole(output);
       updateTask(taskId, {
         output: [...(tasks.get(taskId).output || []), { type: 'stdout', data: output }]
       });
     });
-    
     childProcess.stderr.on("data", (data) => {
       const output = data.toString();
-      // Store in console buffer for MCP access
-      if (storeRefineryConsoleOutput) {
-        storeRefineryConsoleOutput(output);
-      }
-      if (refinery_stdout_ws) {
-        refinery_stdout_ws.send(output);
-      }
+      if (storeRefineryConsoleOutput) storeRefineryConsoleOutput(output);
+      sendRefineryConsole(output);
       updateTask(taskId, {
         output: [...(tasks.get(taskId).output || []), { type: 'stderr', data: output }]
       });
     });
-    
     childProcess.on("close", (code) => {
       const exitMsg = "[EXIT] refinery exited with code " + code;
-      // Store in console buffer for MCP access
-      if (storeRefineryConsoleOutput) {
-        storeRefineryConsoleOutput(exitMsg);
-      }
+      if (storeRefineryConsoleOutput) storeRefineryConsoleOutput(exitMsg);
+      sendRefineryConsole(exitMsg);
       updateTask(taskId, {
         status: 'completed',
         data: { ...tasks.get(taskId).data, exitCode: code }
       });
-      if (refinery_stdout_ws) {
-        refinery_stdout_ws.send(exitMsg);
-      }
     });
-    
     childProcess.on("error", (err) => {
       const errorMsg = "[ERROR] " + err.toString();
-      // Store in console buffer for MCP access
-      if (storeRefineryConsoleOutput) {
-        storeRefineryConsoleOutput(errorMsg);
-      }
+      if (storeRefineryConsoleOutput) storeRefineryConsoleOutput(errorMsg);
+      sendRefineryConsole(errorMsg);
       updateTask(taskId, {
         status: 'failed',
         error: err.toString()
       });
-      if (refinery_stdout_ws) {
-        refinery_stdout_ws.send(errorMsg);
-      }
     });
     
     // Broadcast process start to UI

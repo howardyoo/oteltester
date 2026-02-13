@@ -371,12 +371,12 @@ function init_otelcol_stdout_ws(config) {
             // console.log("otelcol_stdout_ws: ", message);
             // var textarea = document.getElementById("otelcol_output");
             if(message !== "{{pong}}") {
-                // textarea.value += message;
-                // textarea.scrollTop = textarea.scrollHeight;
-                var value = otelcol_output.getValue();
-                value += message;
-                otelcol_output.setValue(value);
-                otelcol_output.setCursor(otelcol_output.lineCount(), 0);
+                if (otelcol_output) {
+                    var value = otelcol_output.getValue();
+                    value += message;
+                    otelcol_output.setValue(value);
+                    otelcol_output.setCursor(otelcol_output.lineCount(), 0);
+                }
             } else {
                 otelcol_stdout_ws_ping = 0;
             }
@@ -402,12 +402,12 @@ function init_refinery_stdout_ws(config) {
             // console.log("refinery_stdout_ws: ", message);
             // var textarea = document.getElementById("refinery_output");
             if(message !== "{{pong}}") {
-                // textarea.value += message;
-                // textarea.scrollTop = textarea.scrollHeight;
-                var value = refinery_output.getValue();
-                value += message;
-                refinery_output.setValue(value);
-                refinery_output.setCursor(refinery_output.lineCount(), 0);
+                if (refinery_output) {
+                    var value = refinery_output.getValue();
+                    value += message;
+                    refinery_output.setValue(value);
+                    refinery_output.setCursor(refinery_output.lineCount(), 0);
+                }
             } else {
                 refinery_stdout_ws_ping = 0;
             }
@@ -666,6 +666,22 @@ function handle_mcp_activity(activity) {
         case 'console_buffer_cleared':
             console.log("🔄 MCP: Console buffer cleared -", activity.data?.source);
             show_mcp_notification("Console Cleared", `${activity.data?.source} console buffer cleared via MCP`);
+            break;
+            
+        case 'otelcol_installed':
+            console.log("🔄 MCP: OTEL Collector installed -", activity.data?.version);
+            show_mcp_notification("OTEL Collector Installed", activity.data?.message || "OTEL Collector installed via MCP");
+            if (typeof refresh_otelcol_status === 'function') {
+                refresh_otelcol_status();
+            }
+            break;
+            
+        case 'refinery_installed':
+            console.log("🔄 MCP: Refinery installed -", activity.data?.version);
+            show_mcp_notification("Refinery Installed", activity.data?.message || "Refinery installed via MCP");
+            if (typeof refresh_refinery_status === 'function') {
+                refresh_refinery_status();
+            }
             break;
             
         default:

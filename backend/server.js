@@ -1190,6 +1190,19 @@ app.get("/api/refresh", (req, res) => {
   }
 });
 
+// Send exit/stop message to console WebSocket (ensures UI shows feedback after refresh + stop)
+function sendConsoleStopMessage(type, pid) {
+  const msg = type === "otelcol"
+    ? `[STOP] Stop signal sent to otelcol (pid ${pid}). Process is terminating.\n`
+    : `[STOP] Stop signal sent to refinery (pid ${pid}). Process is terminating.\n`;
+  const store = type === "otelcol" ? storeOtelcolConsoleOutput : storeRefineryConsoleOutput;
+  const ws = type === "otelcol" ? otelcol_stdout_ws : refinery_stdout_ws;
+  if (store) store(msg);
+  if (ws && ws.readyState === 1) {
+    try { ws.send(msg); } catch (e) { /* ignore */ }
+  }
+}
+
 // stop the process with the given pid
 app.get("/api/stop", (req, res) => {
   var pid = req.query["pid"];
@@ -1201,6 +1214,7 @@ app.get("/api/stop", (req, res) => {
           console.log(err.message);
           res.status(500).json({ error: "Failed to stop process with pid " + pid });
         } else {
+          sendConsoleStopMessage("otelcol", pid);
           res.json({ message: "stop signal sent successfully", status: "success" });
         }
       });
@@ -1210,6 +1224,7 @@ app.get("/api/stop", (req, res) => {
           console.log(err.message);
           res.status(500).json({ error: "Failed to stop process with pid " + pid });
         } else {
+          sendConsoleStopMessage("refinery", pid);
           res.json({ message: "stop signal sent successfully", status: "success" });
         }
       });
@@ -1579,8 +1594,10 @@ function initializeMCP() {
     otelcol_setup_ws,
     refinery_setup_ws,
     mcp_activity_ws,
-    // Getter function to get current mcp_activity_ws reference
+    // Getter functions to get current WebSocket references (needed because MCP init runs before UI connects)
     getMcpActivityWs: () => mcp_activity_ws,
+    getOtelcolStdoutWs: () => otelcol_stdout_ws,
+    getRefineryStdoutWs: () => refinery_stdout_ws,
     // Output buffer accessors for MCP tools
     getLatestOtelcolOutputs,
     getLatestRefineryOutputs,
