@@ -103,6 +103,24 @@ async function update_edit_section(config) {
 
 function update_otelcol_status(config) {
   if(config) {
+    // Update install status span (version display) so UI/MCP installs both show correct version
+    var otelcol_install_status = document.getElementById('otelcol_install_status');
+    if (otelcol_install_status) {
+      if (config.collector_installed) {
+        otelcol_install_status.innerText = "🟢 Installed: " + (config.collector_version || "?");
+        fetch('/api/otelcol_version')
+          .then(response => response.json())
+          .then(data => {
+            if (data.result && data.version && otelcol_install_status) {
+              otelcol_install_status.innerText = "🟢 Installed: " + String(data.version).trim();
+            }
+          })
+          .catch(() => { /* keep config version on error */ });
+      } else {
+        otelcol_install_status.innerText = "🔴 Uninstalled";
+      }
+    }
+
     var otelcol_html = "<li>";
     if (config.collector_installed) {
       otelcol_html += "✅";
@@ -139,6 +157,24 @@ function update_otelcol_status(config) {
 
 function update_refinery_status(config) {
   if(config) {
+    // Update install status span (version display) so UI/MCP installs both show correct version
+    var refinery_install_status = document.getElementById('refinery_install_status');
+    if (refinery_install_status) {
+      if (config.refinery_installed) {
+        refinery_install_status.innerText = "🟢 Installed: " + (config.refinery_version || "?");
+        fetch('/api/refinery_version')
+          .then(response => response.json())
+          .then(data => {
+            if (data.result && data.version && refinery_install_status) {
+              refinery_install_status.innerText = "🟢 Installed: " + String(data.version).trim();
+            }
+          })
+          .catch(() => { /* keep config version on error */ });
+      } else {
+        refinery_install_status.innerText = "🔴 Uninstalled";
+      }
+    }
+
     var refinery_html = "<li>";
     if (config.refinery_installed) {
       refinery_html += "✅";

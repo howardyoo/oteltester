@@ -19,6 +19,7 @@ import { readdirSync, unlinkSync } from "fs";
 import auth from "./auth.js";
 import Ajv from "ajv";
 import fs from "fs";
+import { handleMCPRequest, setWebSocketRefs, captureOutputForTask, getActiveOutputTasks } from "./mcp.js";
 
 // OTEL schema validator init.
 const schema = JSON.parse(fs.readFileSync("./backend/schema/otel-schema.json", "utf8"));
@@ -290,6 +291,234 @@ wsRefinerySetupServer.on("connection", (ws, req) => {
   });
 });
 
+// global variable for MCP activity websocket - broadcasts MCP actions to UI
+let mcp_activity_ws = null;
+
+// Output buffers to store the latest otelcol and refinery outputs for MCP access
+const MAX_OUTPUT_BUFFER_SIZE = 50; // Maximum number of outputs to store
+const otelcolOutputBuffer = [];
+const refineryOutputBuffer = [];
+
+/**
+ * Store output in otelcol buffer
+ */
+function storeOtelcolOutput(type, data) {
+  const output = {
+    type,
+    data: typeof data === 'string' ? JSON.parse(data.trim()) : data,
+    timestamp: new Date().toISOString()
+  };
+  otelcolOutputBuffer.unshift(output); // Add to front
+  if (otelcolOutputBuffer.length > MAX_OUTPUT_BUFFER_SIZE) {
+    otelcolOutputBuffer.pop(); // Remove oldest
+  }
+}
+
+/**
+ * Store output in refinery buffer
+ */
+function storeRefineryOutput(type, data) {
+  const output = {
+    type,
+    data: typeof data === 'string' ? JSON.parse(data.trim()) : data,
+    timestamp: new Date().toISOString()
+  };
+  refineryOutputBuffer.unshift(output); // Add to front
+  if (refineryOutputBuffer.length > MAX_OUTPUT_BUFFER_SIZE) {
+    refineryOutputBuffer.pop(); // Remove oldest
+  }
+}
+
+/**
+ * Get latest otelcol outputs
+ */
+export function getLatestOtelcolOutputs(count = 10) {
+  return otelcolOutputBuffer.slice(0, Math.min(count, otelcolOutputBuffer.length));
+}
+
+/**
+ * Get latest refinery outputs
+ */
+export function getLatestRefineryOutputs(count = 10) {
+  return refineryOutputBuffer.slice(0, Math.min(count, refineryOutputBuffer.length));
+}
+
+/**
+ * Clear otelcol output buffer
+ */
+export function clearOtelcolOutputBuffer() {
+  otelcolOutputBuffer.length = 0;
+}
+
+/**
+ * Clear refinery output buffer
+ */
+export function clearRefineryOutputBuffer() {
+  refineryOutputBuffer.length = 0;
+}
+
+// Console output buffers to store stdout/stderr from otelcol and refinery for MCP access
+const MAX_CONSOLE_BUFFER_LINES = 500; // Maximum number of lines to store
+const otelcolConsoleBuffer = [];
+const refineryConsoleBuffer = [];
+
+/**
+ * Store console output line in otelcol buffer
+ */
+export function storeOtelcolConsoleOutput(data) {
+  const lines = data.toString().split('\n').filter(line => line.trim() !== '');
+  const timestamp = new Date().toISOString();
+  for (const line of lines) {
+    otelcolConsoleBuffer.push({
+      line,
+      timestamp
+    });
+    if (otelcolConsoleBuffer.length > MAX_CONSOLE_BUFFER_LINES) {
+      otelcolConsoleBuffer.shift(); // Remove oldest
+    }
+  }
+}
+
+/**
+ * Store console output line in refinery buffer
+ */
+export function storeRefineryConsoleOutput(data) {
+  const lines = data.toString().split('\n').filter(line => line.trim() !== '');
+  const timestamp = new Date().toISOString();
+  for (const line of lines) {
+    refineryConsoleBuffer.push({
+      line,
+      timestamp
+    });
+    if (refineryConsoleBuffer.length > MAX_CONSOLE_BUFFER_LINES) {
+      refineryConsoleBuffer.shift(); // Remove oldest
+    }
+  }
+}
+
+/**
+ * Get latest otelcol console output (tail)
+ * @param {number} lines - Number of lines to retrieve from the end
+ */
+export function getOtelcolConsoleOutput(lines = 100) {
+  const start = Math.max(0, otelcolConsoleBuffer.length - lines);
+  return {
+    lines: otelcolConsoleBuffer.slice(start),
+    total: otelcolConsoleBuffer.length,
+    returned: Math.min(lines, otelcolConsoleBuffer.length)
+  };
+}
+
+/**
+ * Get otelcol console output with pagination
+ * @param {number} page - Page number (1-based)
+ * @param {number} pageSize - Lines per page
+ */
+export function getOtelcolConsoleOutputPaginated(page = 1, pageSize = 50) {
+  const totalPages = Math.ceil(otelcolConsoleBuffer.length / pageSize);
+  const start = (page - 1) * pageSize;
+  const end = start + pageSize;
+  return {
+    lines: otelcolConsoleBuffer.slice(start, end),
+    page,
+    pageSize,
+    totalLines: otelcolConsoleBuffer.length,
+    totalPages,
+    hasMore: page < totalPages
+  };
+}
+
+/**
+ * Get latest refinery console output (tail)
+ * @param {number} lines - Number of lines to retrieve from the end
+ */
+export function getRefineryConsoleOutput(lines = 100) {
+  const start = Math.max(0, refineryConsoleBuffer.length - lines);
+  return {
+    lines: refineryConsoleBuffer.slice(start),
+    total: refineryConsoleBuffer.length,
+    returned: Math.min(lines, refineryConsoleBuffer.length)
+  };
+}
+
+/**
+ * Get refinery console output with pagination
+ * @param {number} page - Page number (1-based)
+ * @param {number} pageSize - Lines per page
+ */
+export function getRefineryConsoleOutputPaginated(page = 1, pageSize = 50) {
+  const totalPages = Math.ceil(refineryConsoleBuffer.length / pageSize);
+  const start = (page - 1) * pageSize;
+  const end = start + pageSize;
+  return {
+    lines: refineryConsoleBuffer.slice(start, end),
+    page,
+    pageSize,
+    totalLines: refineryConsoleBuffer.length,
+    totalPages,
+    hasMore: page < totalPages
+  };
+}
+
+/**
+ * Clear otelcol console buffer
+ */
+export function clearOtelcolConsoleBuffer() {
+  otelcolConsoleBuffer.length = 0;
+}
+
+/**
+ * Clear refinery console buffer
+ */
+export function clearRefineryConsoleBuffer() {
+  refineryConsoleBuffer.length = 0;
+}
+
+/**
+ * Search console output for patterns (useful for error detection)
+ * @param {string} source - 'otelcol' or 'refinery'
+ * @param {string} pattern - String or regex pattern to search for
+ * @param {boolean} caseSensitive - Whether to use case-sensitive matching
+ */
+export function searchConsoleOutput(source, pattern, caseSensitive = false) {
+  const buffer = source === 'otelcol' ? otelcolConsoleBuffer : refineryConsoleBuffer;
+  const regex = new RegExp(pattern, caseSensitive ? '' : 'i');
+  const matches = [];
+  
+  for (let i = 0; i < buffer.length; i++) {
+    if (regex.test(buffer[i].line)) {
+      matches.push({
+        index: i,
+        ...buffer[i]
+      });
+    }
+  }
+  
+  return {
+    matches,
+    matchCount: matches.length,
+    totalLines: buffer.length,
+    pattern
+  };
+}
+
+const wsMcpActivityServer = new WebSocketServer({ noServer: true });
+wsMcpActivityServer.on("connection", (ws, req) => {
+  console.log("A new ws client connected - MCP activity");
+  mcp_activity_ws = ws;
+  // on message
+  ws.on("message", (message) => {
+    if(message.toString() === "ping") {
+      ws.send("{{pong}}");
+    }
+  });
+  // on close
+  ws.on("close", () => {
+    console.log("MCP activity websocket client disconnected.");
+    mcp_activity_ws = null;
+  });
+});
+
 // create websocket server
 const wss = new WebSocketServer({ noServer: true });
 
@@ -326,6 +555,10 @@ server.on("upgrade", (request, socket, head) => {
   } else if ( url === "/refinery_setup" || url === "/refinery_setup/" ) {
     wsRefinerySetupServer.handleUpgrade(request, socket, head, (ws) => {
       wsRefinerySetupServer.emit("connection", ws, request);
+    });
+  } else if ( url === "/mcp_activity" || url === "/mcp_activity/" ) {
+    wsMcpActivityServer.handleUpgrade(request, socket, head, (ws) => {
+      wsMcpActivityServer.emit("connection", ws, request);
     });
   } else if ( url.startsWith("/ai_assistant") ) {
     // need to parse the url to get the id_prefix
@@ -480,24 +713,30 @@ app.get("/api/otelcol_start", (req, res) => {
     // get pid of the child process
     var pid = childProcess.pid;
     childProcess.stdout.on("data", (data) => {
+      storeOtelcolConsoleOutput(data); // Store in buffer for MCP access
       if (otelcol_stdout_ws) {
         otelcol_stdout_ws.send(data.toString());
       }
     });
     childProcess.stderr.on("data", (data) => {
+      storeOtelcolConsoleOutput(data); // Store in buffer for MCP access
       if (otelcol_stdout_ws) {
         // console.log("otelcol stderr >>>> " + data.toString());
         otelcol_stdout_ws.send(data.toString());
       }
     });
     childProcess.on("close", (code) => {
+      const exitMsg = "[EXIT] otelcol exited with code " + code + "\n";
+      storeOtelcolConsoleOutput(exitMsg); // Store in buffer for MCP access
       if (otelcol_stdout_ws) {
-        otelcol_stdout_ws.send("[EXIT] otelcol exited with code " + code + "\n");
+        otelcol_stdout_ws.send(exitMsg);
       }
     });
     childProcess.on("error", (err) => {
+      const errorMsg = "[ERROR] " + err.toString() + "\n";
+      storeOtelcolConsoleOutput(errorMsg); // Store in buffer for MCP access
       if (otelcol_stdout_ws) {
-        otelcol_stdout_ws.send("[ERROR] " + err.toString() + "\n");
+        otelcol_stdout_ws.send(errorMsg);
       }
     });
     res.status(200).send({result: true, pid: pid, message: "otelcol started successfully"});
@@ -517,23 +756,29 @@ app.get("/api/refinery_start", (req, res) => {
     // get pid of the child process
     var pid = childProcess.pid;
     childProcess.stdout.on("data", (data) => {
+      storeRefineryConsoleOutput(data); // Store in buffer for MCP access
       if (refinery_stdout_ws) {
         refinery_stdout_ws.send(data.toString());
       }
     });
     childProcess.stderr.on("data", (data) => {
+      storeRefineryConsoleOutput(data); // Store in buffer for MCP access
       if (refinery_stdout_ws) {
         refinery_stdout_ws.send(data.toString());
       }
     });
     childProcess.on("close", (code) => {
+      const exitMsg = "[EXIT] refinery exited with code " + code;
+      storeRefineryConsoleOutput(exitMsg); // Store in buffer for MCP access
       if (refinery_stdout_ws) {
-        refinery_stdout_ws.send("[EXIT] refinery exited with code " + code);
+        refinery_stdout_ws.send(exitMsg);
       }
     });
     childProcess.on("error", (err) => {
+      const errorMsg = "[ERROR] " + err.toString();
+      storeRefineryConsoleOutput(errorMsg); // Store in buffer for MCP access
       if (refinery_stdout_ws) {
-        refinery_stdout_ws.send("[ERROR] " + err.toString());
+        refinery_stdout_ws.send(errorMsg);
       }
     });
     res.status(200).send({result: true, pid: pid, message: "refinery started successfully"});
@@ -945,6 +1190,19 @@ app.get("/api/refresh", (req, res) => {
   }
 });
 
+// Send exit/stop message to console WebSocket (ensures UI shows feedback after refresh + stop)
+function sendConsoleStopMessage(type, pid) {
+  const msg = type === "otelcol"
+    ? `[STOP] Stop signal sent to otelcol (pid ${pid}). Process is terminating.\n`
+    : `[STOP] Stop signal sent to refinery (pid ${pid}). Process is terminating.\n`;
+  const store = type === "otelcol" ? storeOtelcolConsoleOutput : storeRefineryConsoleOutput;
+  const ws = type === "otelcol" ? otelcol_stdout_ws : refinery_stdout_ws;
+  if (store) store(msg);
+  if (ws && ws.readyState === 1) {
+    try { ws.send(msg); } catch (e) { /* ignore */ }
+  }
+}
+
 // stop the process with the given pid
 app.get("/api/stop", (req, res) => {
   var pid = req.query["pid"];
@@ -956,6 +1214,7 @@ app.get("/api/stop", (req, res) => {
           console.log(err.message);
           res.status(500).json({ error: "Failed to stop process with pid " + pid });
         } else {
+          sendConsoleStopMessage("otelcol", pid);
           res.json({ message: "stop signal sent successfully", status: "success" });
         }
       });
@@ -965,6 +1224,7 @@ app.get("/api/stop", (req, res) => {
           console.log(err.message);
           res.status(500).json({ error: "Failed to stop process with pid " + pid });
         } else {
+          sendConsoleStopMessage("refinery", pid);
           res.json({ message: "stop signal sent successfully", status: "success" });
         }
       });
@@ -1008,10 +1268,18 @@ app.get("/api/refinery_install", (req, res) => {
 // receive the otelcol output which is OTLP JSON on http
 app.post("/v1/traces", (req, res) => {
   console.log("Received OTLP JSON - Traces");
+  const output = JSON.stringify(req.body, null, 2) + "\n";
   // send the request body to the otelcol output websocket,
   // if the socket is connected.
   if(otelcol_out_ws) {
-    otelcol_out_ws.send(JSON.stringify(req.body, null, 2) + "\n");
+    otelcol_out_ws.send(output);
+  }
+  // Store in output buffer for MCP access
+  storeOtelcolOutput('traces', req.body);
+  // Forward to active MCP output collection tasks
+  const activeTasks = getActiveOutputTasks('otelcol');
+  for (const taskId of activeTasks) {
+    captureOutputForTask(taskId, 'otlp_traces', output);
   }
   res.status(200).send();
 });
@@ -1019,6 +1287,7 @@ app.post("/v1/traces", (req, res) => {
 // receive the otelcol output which is OTLP JSON on http
 app.post("/v1/metrics", (req, res) => {
   console.log("Received OTLP JSON - Metrics");
+  const output = JSON.stringify(req.body, null, 2) + "\n";
 
   // if the request is from otelteseter, send request body to refinery output websocket
   if(
@@ -1027,11 +1296,25 @@ app.post("/v1/metrics", (req, res) => {
     if(refinery_out_ws) {
       // format the JSON string with indentations
       // add /n at the end of the string
-      refinery_out_ws.send(JSON.stringify(req.body, null, 2) + "\n");
+      refinery_out_ws.send(output);
+    }
+    // Store in refinery output buffer for MCP access
+    storeRefineryOutput('metrics', req.body);
+    // Forward to active MCP refinery output collection tasks
+    const activeTasks = getActiveOutputTasks('refinery');
+    for (const taskId of activeTasks) {
+      captureOutputForTask(taskId, 'otlp_metrics', output);
     }
   }
   else if(otelcol_out_ws) {
-    otelcol_out_ws.send(JSON.stringify(req.body, null, 2) + "\n");
+    otelcol_out_ws.send(output);
+    // Store in otelcol output buffer for MCP access
+    storeOtelcolOutput('metrics', req.body);
+    // Forward to active MCP otelcol output collection tasks
+    const activeTasks = getActiveOutputTasks('otelcol');
+    for (const taskId of activeTasks) {
+      captureOutputForTask(taskId, 'otlp_metrics', output);
+    }
   }
   res.status(200).send();
 });
@@ -1039,6 +1322,7 @@ app.post("/v1/metrics", (req, res) => {
 // receive the otelcol output which is OTLP JSON on http
 app.post("/v1/logs", (req, res) => {
   console.log("Received OTLP JSON - Logs");
+  const output = JSON.stringify(req.body, null, 2) + "\n";
   // send the request body to the otelcol output websocket,
   // if the socket is connected.
   if(
@@ -1047,10 +1331,24 @@ app.post("/v1/logs", (req, res) => {
     if(refinery_out_ws) {
       // format the JSON string with indentations
       // add /n at the end of the string
-      refinery_out_ws.send(JSON.stringify(req.body, null, 2) + "\n");
+      refinery_out_ws.send(output);
+    }
+    // Store in refinery output buffer for MCP access
+    storeRefineryOutput('logs', req.body);
+    // Forward to active MCP refinery output collection tasks
+    const activeTasks = getActiveOutputTasks('refinery');
+    for (const taskId of activeTasks) {
+      captureOutputForTask(taskId, 'otlp_logs', output);
     }
   } else if(otelcol_out_ws) {
-    otelcol_out_ws.send(JSON.stringify(req.body, null, 2) + "\n");
+    otelcol_out_ws.send(output);
+    // Store in otelcol output buffer for MCP access
+    storeOtelcolOutput('logs', req.body);
+    // Forward to active MCP otelcol output collection tasks
+    const activeTasks = getActiveOutputTasks('otelcol');
+    for (const taskId of activeTasks) {
+      captureOutputForTask(taskId, 'otlp_logs', output);
+    }
   }
   res.status(200).send();
 });
@@ -1059,6 +1357,8 @@ app.post("/v1/logs", (req, res) => {
 server.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
   console.log(`Websocket server running at ws://localhost:${PORT}/ws`);
+  console.log(`MCP endpoint available at http://localhost:${PORT}/mcp`);
+  initializeMCP();
 });
 
 /* ----------------------------------
@@ -1152,15 +1452,24 @@ app.post("/1/batch/:dataset", (req, res) => {
 
   // send the request body to the refinery output websocket,
   // if the socket is connected.
+  const output = JSON.stringify(req.body, null, 2) + "\n";
   if(refinery_out_ws) {
     // format the JSON string with indentations
     // add /n at the end of the string
-    refinery_out_ws.send(JSON.stringify(req.body, null, 2) + "\n");
+    refinery_out_ws.send(output);
+  }
+  // Forward to active MCP refinery output collection tasks
+  const activeTasks = getActiveOutputTasks('refinery');
+  for (const taskId of activeTasks) {
+    captureOutputForTask(taskId, 'batch', output);
   }
 
-  // Return success response with empty JSON payload
-  // This mimics Honeycomb's events endpoint behavior
-  res.status(200).send([{status: 202}]);
+  // Return one {status: 202} per event in the batch. The Honeycomb batch API
+  // requires this - libhoney/Refinery expects N responses for N events.
+  // Returning fewer causes "insufficient responses from server" errors.
+  const events = Array.isArray(req.body) ? req.body : (req.body != null ? [req.body] : []);
+  const responses = events.map(() => ({ status: 202 }));
+  res.status(200).send(responses);
 });
 
 httpsApp.post("/v1/traces", (req, res) => {
@@ -1259,7 +1568,60 @@ httpsApp.post("/v1/logs", (req, res) => {
   res.status(200).send();
 });
 
+// MCP endpoint - Model Context Protocol interface
+app.post("/mcp", (req, res) => {
+  handleMCPRequest(req, res);
+});
+
+// MCP task status endpoint for polling async operations
+app.get("/mcp/tasks/:taskId", (req, res) => {
+  const { taskId } = req.params;
+  handleMCPRequest({
+    body: {
+      jsonrpc: '2.0',
+      id: req.query.id || '1',
+      method: 'tasks/get',
+      params: { taskId }
+    }
+  }, res);
+});
+
+// Set up MCP WebSocket references after servers start
+// This will be called after server.listen to ensure WebSocket refs are available
+function initializeMCP() {
+  setWebSocketRefs({
+    otelcol_out_ws,
+    refinery_out_ws,
+    otelcol_stdout_ws,
+    refinery_stdout_ws,
+    otelcol_setup_ws,
+    refinery_setup_ws,
+    mcp_activity_ws,
+    // Getter functions to get current WebSocket references (needed because MCP init runs before UI connects)
+    getMcpActivityWs: () => mcp_activity_ws,
+    getOtelcolStdoutWs: () => otelcol_stdout_ws,
+    getRefineryStdoutWs: () => refinery_stdout_ws,
+    // Output buffer accessors for MCP tools
+    getLatestOtelcolOutputs,
+    getLatestRefineryOutputs,
+    clearOtelcolOutputBuffer,
+    clearRefineryOutputBuffer,
+    // Console output buffer accessors for MCP tools
+    getOtelcolConsoleOutput,
+    getOtelcolConsoleOutputPaginated,
+    getRefineryConsoleOutput,
+    getRefineryConsoleOutputPaginated,
+    clearOtelcolConsoleBuffer,
+    clearRefineryConsoleBuffer,
+    searchConsoleOutput,
+    // Console output store functions for MCP process handlers
+    storeOtelcolConsoleOutput,
+    storeRefineryConsoleOutput
+  });
+}
+
 // https port listen
 httpsServer.listen(HTTPS_PORT, () => {
   console.log(`HTTPS Server running at https://localhost:${HTTPS_PORT}`);
+  initializeMCP();
 });

@@ -21,6 +21,9 @@ var otelcol_setup_ws = null;
 var otelcol_setup_ws_ping = 0;
 var refinery_setup_ws = null;
 var refinery_setup_ws_ping = 0;
+// global variable for MCP activity websocket
+var mcp_activity_ws = null;
+var mcp_activity_ws_ping = 0;
 
 // global variables for otelcol and refinery installed
 var collector_installed = false;
@@ -368,12 +371,12 @@ function init_otelcol_stdout_ws(config) {
             // console.log("otelcol_stdout_ws: ", message);
             // var textarea = document.getElementById("otelcol_output");
             if(message !== "{{pong}}") {
-                // textarea.value += message;
-                // textarea.scrollTop = textarea.scrollHeight;
-                var value = otelcol_output.getValue();
-                value += message;
-                otelcol_output.setValue(value);
-                otelcol_output.setCursor(otelcol_output.lineCount(), 0);
+                if (otelcol_output) {
+                    var value = otelcol_output.getValue();
+                    value += message;
+                    otelcol_output.setValue(value);
+                    otelcol_output.setCursor(otelcol_output.lineCount(), 0);
+                }
             } else {
                 otelcol_stdout_ws_ping = 0;
             }
@@ -399,12 +402,12 @@ function init_refinery_stdout_ws(config) {
             // console.log("refinery_stdout_ws: ", message);
             // var textarea = document.getElementById("refinery_output");
             if(message !== "{{pong}}") {
-                // textarea.value += message;
-                // textarea.scrollTop = textarea.scrollHeight;
-                var value = refinery_output.getValue();
-                value += message;
-                refinery_output.setValue(value);
-                refinery_output.setCursor(refinery_output.lineCount(), 0);
+                if (refinery_output) {
+                    var value = refinery_output.getValue();
+                    value += message;
+                    refinery_output.setValue(value);
+                    refinery_output.setCursor(refinery_output.lineCount(), 0);
+                }
             } else {
                 refinery_stdout_ws_ping = 0;
             }
@@ -523,6 +526,202 @@ function init_refinery_setup_ws(config) {
     }
 }
 
+/**
+ * Initialize MCP activity WebSocket to receive real-time updates from MCP actions
+ * This allows the UI to reflect changes made by AI agents via MCP
+ */
+function init_mcp_activity_ws(config) {
+    var ws_url = (config.host_name.includes("localhost")) ? "ws" : "wss";
+    try {
+        mcp_activity_ws = new WebSocket(`${ws_url}://${config.host_name}/mcp_activity`);
+        mcp_activity_ws.onmessage = (event) => {
+            const message = event.data;
+            if(message !== "{{pong}}") {
+                try {
+                    var activity = JSON.parse(message);
+                    console.log("MCP Activity:", activity);
+                    handle_mcp_activity(activity);
+                } catch (e) {
+                    console.error("Error parsing MCP activity message:", e);
+                }
+            } else {
+                mcp_activity_ws_ping = 0;
+            }
+        };
+        mcp_activity_ws.onclose = () => {
+            console.log("MCP activity websocket closed, reconnecting...");
+            mcp_activity_ws = null;
+            mcp_activity_ws_ping = 0;
+            setTimeout(() => init_mcp_activity_ws(config), 1000);
+        };
+        mcp_activity_ws.onerror = (error) => {
+            console.error("MCP activity websocket error:", error);
+        };
+    } catch (error) {
+        console.error("Error initializing MCP activity websocket:", error);
+        setTimeout(() => init_mcp_activity_ws(config), 1000);
+    }
+}
+
+/**
+ * Handle MCP activity events and update the UI accordingly
+ */
+function handle_mcp_activity(activity) {
+    if (!activity || !activity.action) return;
+    
+    switch(activity.action) {
+        case 'config_saved':
+            // Refresh the main config
+            console.log("🔄 MCP: Main configuration updated");
+            show_mcp_notification("Configuration Updated", "Main configuration was updated via MCP agent");
+            break;
+            
+        case 'yaml_saved':
+            // Check if it's an otelcol or refinery config
+            if (activity.data && activity.data.path) {
+                if (activity.data.path.includes('otelcol')) {
+                    console.log("🔄 MCP: OTEL Collector config updated");
+                    // Refresh the otelcol editor
+                    if (activity.data.content && typeof otelcol_editor !== 'undefined') {
+                        otelcol_editor.setValue(activity.data.content);
+                        append_otelcol_config_history(activity.data.content);
+                        show_mcp_notification("OTEL Collector Config", "Configuration updated via MCP agent");
+                    }
+                } else if (activity.data.path.includes('refinery-config')) {
+                    console.log("🔄 MCP: Refinery config updated");
+                    if (activity.data.content && typeof refinery_editor !== 'undefined') {
+                        refinery_editor.setValue(activity.data.content);
+                        append_refinery_config_history(activity.data.content);
+                        show_mcp_notification("Refinery Config", "Configuration updated via MCP agent");
+                    }
+                } else if (activity.data.path.includes('refinery-rule')) {
+                    console.log("🔄 MCP: Refinery rule updated");
+                    if (activity.data.content && typeof refinery_rule_editor !== 'undefined') {
+                        refinery_rule_editor.setValue(activity.data.content);
+                        append_refinery_rule_history(activity.data.content);
+                        show_mcp_notification("Refinery Rules", "Rules updated via MCP agent");
+                    }
+                }
+            }
+            break;
+            
+        case 'otel_data_submitting':
+            // Show the OTEL data being submitted in the input editor
+            if (activity.data && activity.data.json && typeof otelcol_json_input !== 'undefined') {
+                console.log("🔄 MCP: OTEL data being submitted");
+                var jsonStr = JSON.stringify(activity.data.json, null, 2);
+                otelcol_json_input.setValue(jsonStr);
+                append_otel_input(jsonStr);
+                show_mcp_notification("OTEL Data Submission", "Data submitted via MCP agent to: " + (activity.data.url || "endpoint"));
+            }
+            break;
+            
+        case 'otel_data_submitted':
+            console.log("🔄 MCP: OTEL data submitted successfully");
+            if (activity.data && activity.data.result) {
+                show_send_result_dialog("otel_input_validation", activity.data.result);
+            }
+            break;
+            
+        case 'saved_json_updated':
+            console.log("🔄 MCP: Saved JSON updated -", activity.data?.name);
+            show_mcp_notification("Saved JSON Updated", `'${activity.data?.name}' updated via MCP agent`);
+            break;
+            
+        case 'process_started':
+            console.log("🔄 MCP: Process started -", activity.data?.type);
+            show_mcp_notification("Process Started", `${activity.data?.type} started via MCP agent (PID: ${activity.data?.pid})`);
+            // Refresh status will be handled by the existing status refresh loop
+            break;
+            
+        case 'process_stopped':
+            console.log("🔄 MCP: Process stopped -", activity.data?.type);
+            show_mcp_notification("Process Stopped", `${activity.data?.type} stopped via MCP agent`);
+            break;
+            
+        case 'process_refreshed':
+            console.log("🔄 MCP: Process refreshed -", activity.data?.type);
+            show_mcp_notification("Config Reloaded", `${activity.data?.type} configuration reloaded via MCP agent`);
+            break;
+            
+        case 'output_forwarding':
+            console.log("🔄 MCP: Output forwarding -", activity.data?.source, "to", activity.data?.target);
+            show_mcp_notification("Forwarding Output", `Forwarding ${activity.data?.type || 'data'} from ${activity.data?.source} to ${activity.data?.target}`);
+            break;
+            
+        case 'output_forwarded':
+            console.log("🔄 MCP: Output forwarded -", activity.data?.result?.message);
+            if (activity.data?.result?.sent) {
+                show_mcp_notification("Output Forwarded", activity.data?.result?.message || "Data forwarded successfully");
+            } else {
+                show_mcp_notification("Forward Failed", activity.data?.result?.message || "Failed to forward data");
+            }
+            break;
+            
+        case 'output_buffer_cleared':
+            console.log("🔄 MCP: Output buffer cleared -", activity.data?.source);
+            show_mcp_notification("Buffer Cleared", `${activity.data?.source} output buffer cleared via MCP`);
+            break;
+            
+        case 'console_buffer_cleared':
+            console.log("🔄 MCP: Console buffer cleared -", activity.data?.source);
+            show_mcp_notification("Console Cleared", `${activity.data?.source} console buffer cleared via MCP`);
+            break;
+            
+        case 'otelcol_installed':
+            console.log("🔄 MCP: OTEL Collector installed -", activity.data?.version);
+            show_mcp_notification("OTEL Collector Installed", activity.data?.message || "OTEL Collector installed via MCP");
+            if (typeof refresh_otelcol_status === 'function') {
+                refresh_otelcol_status();
+            }
+            break;
+            
+        case 'refinery_installed':
+            console.log("🔄 MCP: Refinery installed -", activity.data?.version);
+            show_mcp_notification("Refinery Installed", activity.data?.message || "Refinery installed via MCP");
+            if (typeof refresh_refinery_status === 'function') {
+                refresh_refinery_status();
+            }
+            break;
+            
+        default:
+            console.log("🔄 MCP: Unknown activity -", activity.action);
+    }
+}
+
+/**
+ * Show a notification for MCP activity
+ */
+function show_mcp_notification(title, message) {
+    // Create a notification element
+    var notification = document.createElement("div");
+    notification.className = "mcp-notification";
+    notification.innerHTML = `
+        <div class="mcp-notification-header">
+            <span class="mcp-notification-icon">🤖</span>
+            <span class="mcp-notification-title">${title}</span>
+            <span class="mcp-notification-close" onclick="this.parentElement.parentElement.remove()">×</span>
+        </div>
+        <div class="mcp-notification-body">${message}</div>
+    `;
+    
+    // Add to the body
+    document.body.appendChild(notification);
+    
+    // Animate in
+    setTimeout(() => {
+        notification.classList.add("show");
+    }, 10);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        notification.classList.remove("show");
+        setTimeout(() => {
+            notification.remove();
+        }, 300);
+    }, 5000);
+}
+
 // initialize the websocket
 // config is json object from config.yaml
 function init_ws(config) {
@@ -533,6 +732,8 @@ function init_ws(config) {
     init_refinery_stdout_ws(config);
     init_otelcol_setup_ws(config);
     init_refinery_setup_ws(config);
+    // Initialize MCP activity websocket for real-time MCP updates
+    init_mcp_activity_ws(config);
 }
 
 function toggle_edit_section(section, button) {
@@ -1678,6 +1879,11 @@ function refresh_websocket() {
             if(refinery_setup_ws && refinery_setup_ws.readyState == WebSocket.OPEN) {
                 refinery_setup_ws_ping = 1;
                 refinery_setup_ws.send("ping");
+            }
+            // refresh MCP activity websocket
+            if(mcp_activity_ws && mcp_activity_ws.readyState == WebSocket.OPEN) {
+                mcp_activity_ws_ping = 1;
+                mcp_activity_ws.send("ping");
             }
         
             // refresh websocket for ai assistants

@@ -1,4 +1,5 @@
 **/.DS_Store
+data/
 node_modules/
 runtime/otelcol-config.yml
 runtime/otelcol-contrib
