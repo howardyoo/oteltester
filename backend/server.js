@@ -1464,9 +1464,12 @@ app.post("/1/batch/:dataset", (req, res) => {
     captureOutputForTask(taskId, 'batch', output);
   }
 
-  // Return success response with empty JSON payload
-  // This mimics Honeycomb's events endpoint behavior
-  res.status(200).send([{status: 202}]);
+  // Return one {status: 202} per event in the batch. The Honeycomb batch API
+  // requires this - libhoney/Refinery expects N responses for N events.
+  // Returning fewer causes "insufficient responses from server" errors.
+  const events = Array.isArray(req.body) ? req.body : (req.body != null ? [req.body] : []);
+  const responses = events.map(() => ({ status: 202 }));
+  res.status(200).send(responses);
 });
 
 httpsApp.post("/v1/traces", (req, res) => {
