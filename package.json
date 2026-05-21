@@ -1,6 +1,6 @@
 {
   "name": "otel-tester",
-  "version": "1.0.0",
+  "version": "1.1.17",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build:react": "npm run build --prefix frontend-react",
