@@ -123,6 +123,17 @@ function apply_trace_template(json, new_ids = false, strip_time = false, idMap, 
                                     }
                                 });
                             }
+                            if (span.events) {
+                                span.events.forEach(event => {
+                                    // span event has timestamp. If strip_time is true, we need to re-time the event.
+                                    if(event.timeUnixNano) {
+                                        if( strip_time ) {
+                                            var new_time = curr_time - (largest_time - BigInt(event.timeUnixNano));
+                                            event.timeUnixNano = new_time.toString();
+                                        }
+                                    }
+                                });
+                            }
                             if (span.parentSpanId) {
                                 if (span.parentSpanId.match(template_regex)) {
                                     if (idMap[span.parentSpanId]) {

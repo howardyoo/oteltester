@@ -1,0 +1,28 @@
+.theme-toggle {
+  display: inline-flex;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-left: auto;
+}
+
+.theme-toggle__btn {
+  all: unset;
+  box-sizing: border-box;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-header-muted);
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.theme-toggle__btn:hover {
+  color: var(--color-text-on-header);
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.theme-toggle__btn--active {
+  color: var(--color-text-on-header);
+  background-color: rgba(255, 255, 255, 0.18);
+}

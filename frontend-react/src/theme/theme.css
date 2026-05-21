@@ -1,0 +1,86 @@
+:root,
+[data-theme='light'] {
+  color-scheme: light;
+
+  --color-bg: #f0f0f0;
+  --color-bg-elevated: #ffffff;
+  --color-bg-header: #25303e;
+  --color-text: #51368d;
+  --color-text-heading: #25303e;
+  --color-text-muted: #6b7280;
+  --color-text-on-header: #ffffff;
+  --color-text-header-muted: #d0d0d0;
+  --color-border: #d1d5db;
+  --color-border-subtle: #e5e7eb;
+  --color-accent: #1890ff;
+  --color-accent-hover: #0056b3;
+  --color-accent-text: #ffffff;
+  --color-input-bg: #ffffff;
+  --color-input-border: #1890ff;
+  --color-input-text: #1890ff;
+  --color-section-bg: #ffffff;
+  --color-code-bg: #fafafa;
+  --color-status-stopped: #ef4444;
+  --color-status-running: #22c55e;
+  --shadow-section: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  --color-bg: #111827;
+  --color-bg-elevated: #1f2937;
+  --color-bg-header: #0f172a;
+  --color-text: #c4b5fd;
+  --color-text-heading: #f3f4f6;
+  --color-text-muted: #9ca3af;
+  --color-text-on-header: #f9fafb;
+  --color-text-header-muted: #9ca3af;
+  --color-border: #374151;
+  --color-border-subtle: #1f2937;
+  --color-accent: #3b82f6;
+  --color-accent-hover: #60a5fa;
+  --color-accent-text: #ffffff;
+  --color-input-bg: #1f2937;
+  --color-input-border: #3b82f6;
+  --color-input-text: #93c5fd;
+  --color-section-bg: #1f2937;
+  --color-code-bg: #111827;
+  --color-status-stopped: #f87171;
+  --color-status-running: #4ade80;
+  --shadow-section: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']):not([data-theme='dark']) {
+    color-scheme: dark;
+
+    --color-bg: #111827;
+    --color-bg-elevated: #1f2937;
+    --color-bg-header: #0f172a;
+    --color-text: #c4b5fd;
+    --color-text-heading: #f3f4f6;
+    --color-text-muted: #9ca3af;
+    --color-text-on-header: #f9fafb;
+    --color-text-header-muted: #9ca3af;
+    --color-border: #374151;
+    --color-border-subtle: #1f2937;
+    --color-accent: #3b82f6;
+    --color-accent-hover: #60a5fa;
+    --color-accent-text: #ffffff;
+    --color-input-bg: #1f2937;
+    --color-input-border: #3b82f6;
+    --color-input-text: #93c5fd;
+    --color-section-bg: #1f2937;
+    --color-code-bg: #111827;
+    --color-status-stopped: #f87171;
+    --color-status-running: #4ade80;
+    --shadow-section: 0 1px 3px rgba(0, 0, 0, 0.35);
+  }
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='light']):not([data-theme='dark']) {
+    color-scheme: light;
+  }
+}

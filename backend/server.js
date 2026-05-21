@@ -35,6 +35,22 @@ const PORT = 3000;
 const httpsApp = express();
 const HTTPS_PORT = 3001;
 const WORK_DIR = get_workdir();
+const USE_REACT_UI = process.env.USE_REACT_UI === "true";
+const FRONTEND_DIR = USE_REACT_UI
+  ? path.join(WORK_DIR, "./frontend-react/dist")
+  : path.join(WORK_DIR, "./frontend");
+const LEGACY_FRONTEND_DIR = path.join(WORK_DIR, "./frontend");
+
+function serveFrontendStatic(appInstance) {
+  appInstance.use(express.static(FRONTEND_DIR));
+  if (USE_REACT_UI) {
+    appInstance.use("/images", express.static(path.join(LEGACY_FRONTEND_DIR, "./images")));
+  }
+}
+
+function sendFrontendIndex(_req, res) {
+  res.sendFile(path.join(FRONTEND_DIR, "index.html"));
+}
 
 // Create the zstd decompression middleware
 const zstdMiddleware = (req, res, next) => {
@@ -107,8 +123,8 @@ const zstdMiddleware = (req, res, next) => {
 // Apply zstd middleware FIRST for app
 app.use(zstdMiddleware);
 
-// Middleware to serve static files from 'frontend' folder
-app.use(express.static(path.join(WORK_DIR, "./frontend")));
+// Middleware to serve static files from the selected frontend
+serveFrontendStatic(app);
 app.use(express.json({limit: '10mb'}));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(express.text());
@@ -116,7 +132,7 @@ app.use(compression());
 app.use(auth);
 // middleware 
 httpsApp.use(zstdMiddleware);
-httpsApp.use(express.static(path.join(WORK_DIR, "./frontend")));
+serveFrontendStatic(httpsApp);
 httpsApp.use(express.json({limit: '10mb'}));
 httpsApp.use(express.urlencoded({ limit: '10mb', extended: true }));
 httpsApp.use(express.text());
@@ -139,9 +155,7 @@ app.get("/api/message", (req, res) => {
 });
 
 // Serve the frontend
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "../frontend/index.html"));
-});
+app.get("/", sendFrontendIndex);
 
 var openai = null;
 if(process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY != "") {
@@ -1356,6 +1370,7 @@ app.post("/v1/logs", (req, res) => {
 // Start the normal server
 server.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
+  console.log(`Frontend: ${USE_REACT_UI ? "React (frontend-react/dist)" : "Legacy (frontend)"}`);
   console.log(`Websocket server running at ws://localhost:${PORT}/ws`);
   console.log(`MCP endpoint available at http://localhost:${PORT}/mcp`);
   initializeMCP();
@@ -1366,9 +1381,7 @@ server.listen(PORT, () => {
    ---------------------------------- */
 
 // Serve the frontend
-httpsApp.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "../frontend/index.html"));
-});
+httpsApp.get("/", sendFrontendIndex);
 
 // need to create https endpoints /v1/auth wchich will
 // have http header x-honeycomb-team that has value for api key

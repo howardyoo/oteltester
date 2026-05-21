@@ -3,37 +3,46 @@
   "version": "1.0.0",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "build:react": "npm run build --prefix frontend-react",
     "start": "node backend/server.js",
-    "dev": "NODE_ENV=development nodemon backend/server.js"
+    "start:react": "npm run build:react && USE_REACT_UI=true node backend/server.js",
+    "dev": "NODE_ENV=development nodemon backend/server.js",
+    "dev:react": "concurrently -k -n api,vite -c green,blue \"NODE_ENV=development nodemon backend/server.js\" \"npm run dev --prefix frontend-react\""
   },
   "type": "module",
-  "keywords": ["otel", "collector", "refinery", "tester"],
+  "keywords": [
+    "otel",
+    "collector",
+    "refinery",
+    "tester"
+  ],
   "author": "Howard Yoo",
   "license": "ISC",
   "description": "A tool to test the otel collector and refinery",
   "dependencies": {
-    "express": "^4.21.2",
+    "@msgpack/msgpack": "^2.7.0",
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
+    "basic-auth": "^2.0.1",
     "child_process": "^1.0.2",
+    "compression": "^1.7.4",
+    "dotenv": "^16.4.7",
+    "dotenv-flow": "^4.1.0",
+    "express": "^4.21.2",
+    "fast-zstd": "^1.0.0",
+    "follow-redirects": "^1.15.2",
     "fs": "^0.0.1-security",
-    "js-yaml": "^4.1.0",
     "http": "^0.0.1-security",
     "https": "^1.0.0",
-    "ws": "^8.11.0",
-    "@msgpack/msgpack": "^2.7.0",
-    "compression": "^1.7.4",
+    "js-yaml": "^4.1.0",
+    "marked": "^15.0.7",
+    "openai": "^4.86.1",
     "stream": "^0.0.2",
-    "fast-zstd": "^1.0.0",
     "tar-fs": "^2.1.1",
-    "follow-redirects": "^1.15.2",
-    "marked":"^15.0.7",
-    "openai":"^4.86.1",
-    "dotenv":"^16.4.7",
-    "dotenv-flow":"^4.1.0",
-    "basic-auth":"^2.0.1",
-    "ajv":"^8.17.1",
-    "ajv-formats":"^3.0.1"
+    "ws": "^8.11.0"
   },
   "devDependencies": {
+    "concurrently": "^9.2.1",
     "nodemon": "^3.1.9"
   }
 }

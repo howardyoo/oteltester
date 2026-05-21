@@ -1,0 +1,18 @@
+.code-editor {
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.code-editor .cm-editor {
+  font-size: 13px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.code-editor .cm-scroller {
+  min-height: inherit;
+}
+
+.code-editor .cm-focused {
+  outline: none;
+}
